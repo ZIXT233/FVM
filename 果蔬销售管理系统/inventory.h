@@ -6,12 +6,10 @@
 #include"product.h"
 #include"record.h"
 
+
 typedef struct tagInventory {
-	ProductAttr attr;
 	int invID;
-	double unitPrice;
-	int quantity;
-	double weight;
+	Product prod;
 	Record* invRecord;
 	ListHead list;
 }Inventory;
@@ -27,4 +25,5 @@ inline Inventory* invEntry(ListHead* entry) {
 }
 Inventory* invListInit(Inventory* head);
 void invListClear(Inventory* head);
+Inventory* invQueryID(Inventory* head, int invID);
 #endif // !INVENTORY_H

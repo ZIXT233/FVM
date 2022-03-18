@@ -30,17 +30,17 @@
     <ClCompile Include="list.c">
       <Filter>源文件\objects</Filter>
     </ClCompile>
-    <ClCompile Include="UI.c">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="homepage.c">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="inv_manage.c">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="record.c">
       <Filter>源文件\objects</Filter>
+    </ClCompile>
+    <ClCompile Include="homepage.c">
+      <Filter>源文件\objects</Filter>
+    </ClCompile>
+    <ClCompile Include="UI.c">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

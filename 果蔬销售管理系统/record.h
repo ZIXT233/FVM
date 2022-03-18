@@ -4,18 +4,19 @@
 #include"list.h"
 #include"product.h"
 #include<stdlib.h>
+
 typedef struct tagRecord {
-	ProductAttr attr;
-	enum RecordType { PURCHASE, SALE, UPDATE, GIFT } type;
-	int invId;
-	time_t date;
-	double amount;
-	int quantity;
-	double weight;
+	Product prod;
+	enum RecordType { PURCHASE=1, SALE, UPDATE, GIFT } type;
+	int invID, recID;
+	time_t time;
 	char addInfo[INFOMAX];
-	ListHead timeList;
+	ListHead timeList;  //master,default list
 	ListHead IRList;  //records of same inventory
+	time_t lastTime;  //used as filter
 }Record;
+
+
 
 inline Record* recordCreate() {
 	return (Record*)malloc(sizeof(Record));
@@ -26,5 +27,6 @@ inline void recordDel(Record* pos) { //Îö¹¹
 #define recordEntry(ptr,member) listEntry(ptr, Record, member)
 
 Record* recordListInit(Record* head);
+Record* recordQueryID(Record* head, int recID, int direct);
 
 #endif // !RECORD_H

@@ -14,7 +14,8 @@ typedef struct tagGift {
 } Gift;
 
 typedef struct tagSingleSalePlan {
-	ProductAttr attr;
+	Product prod;
+	int invID;
 	int minQuantity;
 	double minWeight;
 	double minAmount;
