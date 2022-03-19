@@ -13,13 +13,13 @@ char quanlityText[5][20] = { "","优","良","差" };
 void cls() {
 	system("cls");
 }
-void drawMenu(const char* title, int n, ...) {
+void drawMenu(const char* title, int n, int firstNum, ...) {
 	va_list args;
-	va_start(args, n);
+	va_start(args, firstNum);
 	printf("%s\n", title);
-	for (int i = 1; i <= n; i++) {
+	for (int i = 0; i < n; i++) {
 		char* item = va_arg(args, char*);
-		printf("\t%d.%s\n", i, item);
+		printf("\t%d.%s\n", firstNum + i, item);
 	}
 	return 0;
 }
@@ -34,7 +34,7 @@ void strMakeLen(char* dest, const char* src, int len) {
 	dest[len - 1] = '\0';
 }
 void drawInvList(Inventory* start, int len) {
-	printf("种类\t\t品种\t\t价格\t\tID\n");
+	printf("种类\t\t品种\t\t销售单价\tID\n");
 	int n = 0;
 	char kind[INFOMAX], var[INFOMAX];
 
@@ -42,7 +42,7 @@ void drawInvList(Inventory* start, int len) {
 		if (n == len) break;
 		strMakeLen(kind, pos->prod.kind, 14);
 		strMakeLen(var, pos->prod.variety, 12);
-		printf("%s\t%s\t%08.2lf\t%d\n", kind, var, pos->prod.unitPrice, pos->invID);
+		printf("%s\t%s\t%8.2lf\t%d\n", kind, var, pos->prod.unitPrice, pos->invID);
 		n++;
 	}
 	while (n++ != len) putchar('\n');
@@ -68,10 +68,10 @@ void drawRecordList(Record* start, int len) {
 			printf("%+.2lf斤\t", pos->prod.weight * typeDirect[pos->type]);
 		}
 		else if (pos->prod.pack == UNIT) {
-			printf("%+d个\t", pos->prod.quantity * typeDirect[pos->type]);
+			printf("%+6d个\t", pos->prod.quantity * typeDirect[pos->type]);
 		}
-		printf("%+.2lf\t", pos->prod.amount * typeDirect[pos->type]);
-		printf("%d/%d/%d %d:%d:%d\n", date.tm_year + 1900, date.tm_mon + 1, date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec);
+		printf("%+8.4g\t", pos->prod.amount * (-typeDirect[pos->type]));
+		printf("%d/%d/%d %02d:%02d:%02d\n", date.tm_year + 1900, date.tm_mon + 1, date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec);
 		n++;
 	}
 	while (n++ != len) putchar('\n');
@@ -100,7 +100,7 @@ int getSelect() {
 	return -1;
 }
 
-int getUIntInput(const char* query, int* value, bool strict) {
+int getUIntInput(const char* query, int* value, IntRange range, bool strict) {
 	int num = 0;
 	char input[INFOMAX];
 	while (1) {
@@ -111,9 +111,14 @@ int getUIntInput(const char* query, int* value, bool strict) {
 			if (!strict) return INPUT_NOCHANGE;
 			else continue;
 		}
-		if (sscanf_s(input, "%d", &num) == 1 && num >= 0) {
-			*value = num;
-			return INPUT_SUCCESS;
+		if (sscanf_s(input, "%d", &num) == 1) {
+			if (range.max < range.min || (num >= range.min && num <= range.max)) {
+				*value = num;
+				return INPUT_SUCCESS;
+			}
+			else {
+				printf("应输入[%d,%d]范围内的整数\n", range.min, range.max);
+			}
 		}
 	}
 }
@@ -135,7 +140,7 @@ int getStrInput(const char* query, char* value, int maxCount, bool strict) {
 	}
 }
 
-int getDoubleInput(const char* query, double* value, bool strict) {
+int getDoubleInput(const char* query, double* value, DoubleRange range, bool strict) {
 	double num = 0;
 	char input[INFOMAX];
 	while (1) {
@@ -147,8 +152,13 @@ int getDoubleInput(const char* query, double* value, bool strict) {
 			else continue;
 		}
 		if (sscanf_s(input, "%lf", &num) == 1) {
-			*value = num;
-			return INPUT_SUCCESS;
+			if (range.max < range.min || (num >= range.min && num <= range.max)) {
+				*value = num;
+				return INPUT_SUCCESS;
+			}
+			else {
+				printf("应输入[%lf,%lf]范围内的实数\n", range.min, range.max);
+			}
 		}
 	}
 }
@@ -187,21 +197,20 @@ int inputProduct(Product* prod) {
 	breakDeliver(getStrInput("输入种类:", prod->kind, INFOMAX, true));
 	breakDeliver(getStrInput("输入品种:", prod->variety, INFOMAX, true));
 	breakDeliver(getDateTime("输入过期时间(年.月.日):", &prod->expiration, true));
-	drawMenu("品质:", 3, "优", "良", "差");
-	prod->quality = 0;
-	while (!(prod->quality >= 1 && prod->quality <= 3)) breakDeliver(getUIntInput("选择品质:", &prod->quality, true));
-	drawMenu("包装方式:", 2, "散装", "单元装");
-	prod->pack = 0;
-	while (!(prod->pack == 1 || prod->pack == 2)) breakDeliver(getUIntInput("选择包装方式:", &prod->pack, true));
+	drawMenu("品质:", 3, 1, "优", "良", "差");
+	breakDeliver(getUIntInput("选择品质:", &prod->quality, (IntRange){ 1,3 }, true));
+	drawMenu("包装方式:", 2, 1, "散装", "单元装");
+	breakDeliver(getUIntInput("选择包装方式:", &prod->pack, (IntRange) { 1,2 }, true));
 	if (prod->pack == BULK) {
-		breakDeliver(getUIntInput("输入重量:", &prod->weight, true));
+		breakDeliver(getDoubleInput("输入重量:", &prod->weight, WRANGE, true));
 	}
 	else if (prod->pack = UNIT) {
-		breakDeliver(getUIntInput("输入数量:", &prod->quantity, true));
+		breakDeliver(getUIntInput("输入数量:", &prod->quantity, QRANGE, true));
 	}
-	breakDeliver(getDoubleInput("输入单价:", &prod->unitPrice, true));
-	if (prod->pack == BULK) prod->amount = prod->unitPrice * prod->weight;
-	else if (prod->pack == UNIT) prod->amount = prod->unitPrice * prod->quantity;
+	breakDeliver(getDoubleInput("输入进货单价:", &prod->purUPrice, UPRINCERANGE, true));
+	breakDeliver(getDoubleInput("设定销售单价:", &prod->unitPrice, UPRINCERANGE, true));
+	//if (prod->pack == BULK) prod->amount = prod->unitPrice * prod->weight;  
+	//else if (prod->pack == UNIT) prod->amount = prod->unitPrice * prod->quantity;
 	return INPUT_SUCCESS;
 }
 int inputProductFilter(Product* prod) {
@@ -210,26 +219,19 @@ int inputProductFilter(Product* prod) {
 	breakDeliver(getStrInput("输入种类(默认不限):", prod->kind, INFOMAX, false));
 	breakDeliver(getStrInput("输入品种(默认不限):", prod->variety, INFOMAX, false));
 	breakDeliver(getDateTime("在此日期及之前过期(年.月.日)(默认不限) : ", &prod->expiration, false));
-	breakDeliver(getUIntInput("输入品质(默认不限):", &prod->quality, false));
-	drawMenu("包装方式:", 3, "不限", "散装", "单元装");
-	prod->pack = 1;
-	do {
-		breakDeliver(getUIntInput("选择包装方式(默认不限):", &prod->pack, false))
-	} while (!(prod->pack >= 1 && prod->pack <= 3));
-		prod->pack--;
-		return INPUT_SUCCESS;
+	breakDeliver(getUIntInput("输入品质(默认不限):", &prod->quality, (IntRange) { 1,3 }, false));
+	drawMenu("包装方式:", 3, 0, "不限", "散装", "单元装");
+	breakDeliver(getUIntInput("选择包装方式(默认不限):", &prod->pack, (IntRange) { 0,2 }, false));
+	prod->pack--;
+	return INPUT_SUCCESS;
 }
 
 int inputRecordFilter(Record* rec) {
 	memset(rec, 0, sizeof(Record));
-	rec->type = 1;
-	do {
-		drawMenu("记录类型:", 5, "不限", "进货", "销售记录", "更新记录", "赠予记录");
-		breakDeliver(getDateTime("记录类型(默认不限) : ", &rec->type, false));
-	} while (!(rec->type >= 1 && rec->type <= 5));
-	rec->type--;
-	breakDeliver(inputProductFilter(&rec->prod));
 	rec->time = rec->lastTime = TIME_NAN;
+	drawMenu("记录类型:", 5, 0, "不限", "进货", "销售记录", "更新记录", "赠予记录");
+	breakDeliver(getUIntInput("记录类型(默认不限) : ", &rec->type, (IntRange){ 0,4 }, false));
+	breakDeliver(inputProductFilter(&rec->prod));
 	breakDeliver(getDateTime("筛选的最早日期(年.月.日)(默认不限) : ", &rec->time, false));
 	breakDeliver(getDateTime("筛选的最晚日期(年.月.日)(默认不限) : ", &rec->lastTime, false));
 	rec->lastTime += 3600 * 24;
@@ -261,6 +263,7 @@ void showInvDetails(Inventory* inv) {
 	else if (inv->prod.pack == UNIT) {
 		printf("库存数量:%d\n", inv->prod.quantity);
 	}
+	printf("销售单价:%.2lf\n", inv->prod.unitPrice);
 }
 
 char typeQuantityText[5][20] = { "","采购量","销售量","变化量","赠予量" };
@@ -270,13 +273,27 @@ void showRecordDetails(Record* rec) {
 	localtime_s(&time, &rec->time);
 	printf("记录ID:%d\n商品ID:%d\n", rec->recID, rec->invID);
 	printf("类型:%s\n", recordType[rec->type]);
-	printf("记录时间:%d/%d/%d %d:%d%d\n", time.tm_year + 1900, time.tm_mon + 1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_hour);
+	printf("记录时间:%d/%d/%d %02d:%02d:%02d\n", time.tm_year + 1900, time.tm_mon + 1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_hour);
 	showProductDetails(&rec->prod);
 	if (rec->prod.pack == BULK) {
 		printf("%s: %.2lf斤\n", typeQuantityText[rec->type], rec->prod.weight);
 	}
 	else if (rec->prod.pack == UNIT) {
 		printf("%s: %d个\n", typeQuantityText[rec->type], rec->prod.quantity);
+	}
+	switch (rec->type) {
+	case PURCHASE:
+		printf("采购单价：%.2lf\n", rec->prod.purUPrice);
+		break;
+	case SALE:
+		printf("销售单价：%.2lf\n", rec->prod.unitPrice);
+		break;
+	case UPDATE:
+		printf("售价变化: %.2lf\n", rec->prod.unitPrice);
+		break;
+	case GIFT:
+		printf("采购单价：%.2lf\n", rec->prod.purUPrice);
+		break;
 	}
 	printf("%s: %.2lf\n", typeAmountText[rec->type], rec->prod.amount);
 	printf("附加信息:%s\n", rec->addInfo);

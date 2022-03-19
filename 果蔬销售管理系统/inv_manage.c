@@ -43,7 +43,7 @@ void invManage(FVMO gdata) {
 		drawInvList(showPage, PageSize);
 		invListClear(showPage);
 		free(showPage);
-		drawMenu("库存管理", 8,
+		drawMenu("库存管理", 9,1,
 			"上一页",
 			"下一页",
 			filterOpt[inFilter],
@@ -51,7 +51,8 @@ void invManage(FVMO gdata) {
 			"商品详情",
 			"商品下架/销毁",
 			"仓管记录",
-			"退出");
+			"退出",
+			"随机进货");
 		select = getSelect();
 		switch (select)
 		{
@@ -77,8 +78,8 @@ void invManage(FVMO gdata) {
 			}
 			break;
 		case 4:
-			randomPurchase(gdata);
-			//purchase(gdata);
+			
+			purchase(gdata);
 			break;
 		case 5:
 			invDetails(gdata);
@@ -107,14 +108,16 @@ void invManage(FVMO gdata) {
 						break;
 					}
 				}
-				break;*/
+				break;
 		case 8:
 			inFilter = 0;
 			pageStart = 1;
 			invListClear(gdata.inventory);
-			break;
-		case 9:
+			break;*/
+		case 8:
 			return;
+		case 9:
+			randomPurchase(gdata);
 		default:
 			break;
 		}
@@ -135,6 +138,8 @@ void randomPurchase(FVMO gdata) {
 	rec->invID = inv->invID;
 	rec->recID = gdata.record->time++;
 	rec->addInfo[0] = '\0';
+	if (inv->prod.pack == UNIT) rec->prod.amount = inv->prod.quantity * inv->prod.purUPrice;
+	else if (inv->prod.pack == BULK) rec->prod.amount = inv->prod.weight * inv->prod.purUPrice;
 	listAddTail(&rec->timeList, &gdata.record->timeList);
 	listAddTail(&rec->IRList, &inv->invRecord->IRList);;
 	listAddTail(&inv->list, &head->list);
@@ -154,6 +159,8 @@ void purchase(FVMO gdata) {
 	rec->invID = inv->invID;
 	rec->recID = gdata.record->time++;
 	rec->addInfo[0] = '\0';
+	if (inv->prod.pack == UNIT) rec->prod.amount = inv->prod.quantity * inv->prod.purUPrice;
+	else if (inv->prod.pack == BULK) rec->prod.amount = inv->prod.weight * inv->prod.purUPrice;
 	listAddTail(&rec->timeList, &gdata.record->timeList);
 	listAddTail(&rec->IRList, &inv->invRecord->IRList);;
 	listAddTail(&inv->list, &head->list);
@@ -165,7 +172,7 @@ void invDetails(FVMO gdata) {
 	Inventory* inv;
 	struct tm date;
 	while (1) {
-		breakDeliver(getUIntInput("请输入商品ID:", &invID, true));
+		breakDeliver(getUIntInput("请输入商品ID:", &invID,ALLINT, true));
 		if (inv = invQueryID(gdata.inventory, invID)) break;
 		else {
 			printf("库存无此商品。\n");
@@ -174,7 +181,7 @@ void invDetails(FVMO gdata) {
 	while (1) {
 		cls();
 		showInvDetails(inv);
-		drawMenu("商品详情", 3,
+		drawMenu("商品详情", 3,1,
 			"修改信息",
 			"仓管记录",
 			"退出");
@@ -196,6 +203,7 @@ void invDetails(FVMO gdata) {
 
 
 }
+
 Inventory* creatRandInv() {
 	Inventory* inv = invCreate();
 	strcpy_s(inv->prod.kind, INFOMAX, ramdomrange[rand() % 8]);
@@ -203,9 +211,10 @@ Inventory* creatRandInv() {
 	inv->prod.pack = rand() % 2 + 1;
 	inv->prod.quality = rand() % 3 + 1;
 	inv->prod.expiration = time(NULL) * 1.5 * rand() / RAND_MAX;
-	inv->prod.unitPrice = 30 * rand() / RAND_MAX;
-	if (inv->prod.pack == UNIT) inv->prod.quantity = rand(), inv->prod.amount = inv->prod.quantity * inv->prod.unitPrice;
-	else inv->prod.weight = (double)100 * rand() / RAND_MAX, inv->prod.amount = inv->prod.weight * inv->prod.unitPrice;
+	inv->prod.purUPrice = 300 * (double)rand() / RAND_MAX;
+	inv->prod.unitPrice = inv->prod.purUPrice + 20.0 * rand() / RAND_MAX;
+	if (inv->prod.pack == UNIT) inv->prod.quantity = rand()*100;
+	else inv->prod.weight = (double)10000 * rand() / RAND_MAX;
 	inv->invRecord = recordListInit(recordCreate());
 	return inv;
 }
@@ -268,7 +277,7 @@ void recordPage(FVMO gdata) {
 		drawRecordList(showPage, PageSize);
 		recordListClear(showPage);
 		free(showPage);
-		drawMenu("仓管记录", 8,
+		drawMenu("仓管记录", 8,1,
 			"上一页",
 			"下一页",
 			filterOpt[inFilter],
@@ -304,7 +313,7 @@ void recordPage(FVMO gdata) {
 		case 4:
 			while (1) {
 				invID = -1;
-				if (getUIntInput("请输入商品ID:", &invID, true) == INPUT_BREAK) break;
+				if (getUIntInput("请输入商品ID:", &invID,ALLINT, true) == INPUT_BREAK) break;
 				if (inv = invQueryID(gdata.inventory, invID)) break;
 				else {
 					printf("库存无此商品。\n");
@@ -316,7 +325,7 @@ void recordPage(FVMO gdata) {
 		case 5:
 			while (1) {
 				recID = -1;
-				if (getUIntInput("请输入记录ID:", &recID, true) == INPUT_BREAK) break;
+				if (getUIntInput("请输入记录ID:", &recID, ALLINT,true) == INPUT_BREAK) break;
 				if (rec = recordQueryID(gdata.record, recID, 0)) break;
 				else {
 					printf("无此记录。\n");
@@ -359,7 +368,7 @@ void invRecordPage(Record* invRecord) {
 		drawRecordList(showPage, PageSize);
 		recordListClear(showPage);
 		free(showPage);
-		drawMenu("仓管记录", 7,
+		drawMenu("仓管记录", 7,1,
 			"上一页",
 			"下一页",
 			filterOpt[inFilter],
@@ -393,7 +402,7 @@ void invRecordPage(Record* invRecord) {
 		case 4:
 			while (1) {
 				recID = -1;
-				if (getUIntInput("请输入记录ID:", &recID, true) == INPUT_BREAK) break;
+				if (getUIntInput("请输入记录ID:", &recID, ALLINT,true) == INPUT_BREAK) break;
 				if (rec = recordQueryID(invRecord, recID, 1)) break;
 				else {
 					printf("无此记录。\n");
@@ -429,7 +438,7 @@ void recDetails(Record* record) {
 		cls();
 
 		showRecordDetails(record);
-		drawMenu("记录详情", 1,
+		drawMenu("记录详情", 1,1,
 			"退出");
 		select = getSelect();
 		switch (select)

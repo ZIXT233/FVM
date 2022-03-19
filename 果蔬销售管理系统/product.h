@@ -15,9 +15,18 @@ typedef struct tagProduct {
 	double weight;
 	double amount;
 	double unitPrice;
+	double purUPrice;
 } Product;
 
+typedef struct tagIntRange {
+	int min, max;
+}IntRange;
+typedef struct tagDoubleRange {
+	double min, max;
+}DoubleRange;
 
+static const IntRange QRANGE = { 0,1e7 }, ALLINT = { 0,-1 };
+static const DoubleRange WRANGE = { 0,1e7 },UPRINCERANGE = { 0,1e8 }, ALLDOUBLE = { 0,-1 };
 inline Product makeProduct(char* kind, char* variety, time_t expiration, enum Packing pack, int quality) {
 	return (Product) { kind, variety, expiration, pack, quality };
 }

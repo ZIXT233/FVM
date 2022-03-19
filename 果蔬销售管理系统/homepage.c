@@ -3,7 +3,7 @@
 void homepage(FVMO gdata) {
 	while (1) {
 		cls();
-		drawMenu("Homepage", 3, "销售系统", "库存管理","退出");
+		drawMenu("Homepage", 3,1, "销售系统", "库存管理","退出");
 		int select = getSelect();
 		switch (select)
 		{
