@@ -222,7 +222,6 @@ int inputProductFilter(Product* prod) {
 	breakDeliver(getUIntInput("输入品质(默认不限):", &prod->quality, (IntRange) { 1,3 }, false));
 	drawMenu("包装方式:", 3, 0, "不限", "散装", "单元装");
 	breakDeliver(getUIntInput("选择包装方式(默认不限):", &prod->pack, (IntRange) { 0,2 }, false));
-	prod->pack--;
 	return INPUT_SUCCESS;
 }
 
