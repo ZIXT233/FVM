@@ -29,12 +29,12 @@ Inventory* invShowPageGen(const Inventory* head, const Product* filter, int* pag
 	}
 }
 
-void randomPurchase(FVMO gdata);
+
 void invManage(FVMO gdata) {
 	int inFilter = 0;
-	int pageStart = 1, * pageStartSave = 1;
+	int pageStart = 1, pageStartSave = 1;
 	char filterOpt[2][20] = { "商品筛选","取消筛选" };
-	Inventory* showPage = NULL;
+	Inventory* showPage = NULL,*inv=NULL;
 	int select, num;
 	Product filter;
 	while (1) {
@@ -69,7 +69,7 @@ void invManage(FVMO gdata) {
 				pageStart = pageStartSave;
 			}
 			else if (!inFilter) {
-				if (inputProductFilter(&filter) == INPUT_BREAK) {
+				breakCatch(inputProductFilter(&filter)) {
 					break;
 				}
 				inFilter = true;
@@ -82,7 +82,14 @@ void invManage(FVMO gdata) {
 			purchase(gdata);
 			break;
 		case 5:
-			invDetails(gdata);
+			while (1) {
+				breakCatch(getUIntInput("请输入商品ID:", &num, ALLINT, true)) return;
+				if (inv = invQueryID(gdata.inventory, num)) break;
+				else {
+					printf("库存无此商品。\n");
+				}
+			}
+			invDetails(inv);
 			break;
 		case 6:
 			num = getSelect();
@@ -151,7 +158,9 @@ void purchase(FVMO gdata) {
 	Inventory* inv = invCreate();
 	inv->invRecord = recordListInit(recordCreate());
 	inv->invID = head->prod.quantity++;
-	inputProduct(&inv->prod);
+	breakCatch(inputProduct(&inv->prod)) {
+		return;
+	}
 	Record* rec = recordCreate();
 	rec->type = PURCHASE;
 	time(&rec->time);
@@ -167,17 +176,10 @@ void purchase(FVMO gdata) {
 	return;
 }
 
-void invDetails(FVMO gdata) {
+void invDetails(Inventory* inv) {
 	int invID, select;
-	Inventory* inv;
 	struct tm date;
-	while (1) {
-		breakDeliver(getUIntInput("请输入商品ID:", &invID,ALLINT, true));
-		if (inv = invQueryID(gdata.inventory, invID)) break;
-		else {
-			printf("库存无此商品。\n");
-		}
-	}
+	
 	while (1) {
 		cls();
 		showInvDetails(inv);
@@ -264,7 +266,7 @@ Record* recordShowPageGen(const Record* head, const Record* filter, int* pageSta
 
 void recordPage(FVMO gdata) {
 	int inFilter = 0;
-	int pageStart = 1, * pageStartSave = 1;
+	int pageStart = 1, pageStartSave = 1;
 	char filterOpt[2][20] = { "记录筛选","取消筛选" };
 	Record* showPage = NULL;
 	int select, num, invID, recID;
@@ -302,7 +304,7 @@ void recordPage(FVMO gdata) {
 				pageStart = pageStartSave;
 			}
 			else if (!inFilter) {
-				if (inputRecordFilter(&filter) == INPUT_BREAK) {
+				breakCatch(inputRecordFilter(&filter)) {
 					break;
 				}
 				inFilter = true;
@@ -313,7 +315,7 @@ void recordPage(FVMO gdata) {
 		case 4:
 			while (1) {
 				invID = -1;
-				if (getUIntInput("请输入商品ID:", &invID,ALLINT, true) == INPUT_BREAK) break;
+				breakCatch (getUIntInput("请输入商品ID:", &invID,ALLINT, true)) break;
 				if (inv = invQueryID(gdata.inventory, invID)) break;
 				else {
 					printf("库存无此商品。\n");
@@ -325,7 +327,7 @@ void recordPage(FVMO gdata) {
 		case 5:
 			while (1) {
 				recID = -1;
-				if (getUIntInput("请输入记录ID:", &recID, ALLINT,true) == INPUT_BREAK) break;
+				breakCatch(getUIntInput("请输入记录ID:", &recID, ALLINT,true)) break;
 				if (rec = recordQueryID(gdata.record, recID, 0)) break;
 				else {
 					printf("无此记录。\n");
@@ -354,7 +356,7 @@ void recordPage(FVMO gdata) {
 }
 void invRecordPage(Record* invRecord) {
 	int inFilter = 0;
-	int pageStart = 1, * pageStartSave = 1;
+	int pageStart = 1, pageStartSave = 1;
 	char filterOpt[2][20] = { "记录筛选","取消筛选" };
 	Record* showPage = NULL;
 	int select, num;
@@ -391,7 +393,7 @@ void invRecordPage(Record* invRecord) {
 				pageStart = pageStartSave;
 			}
 			else if (!inFilter) {
-				if (inputRecordFilter(&filter) == INPUT_BREAK) {
+				breakCatch(inputRecordFilter(&filter)) {
 					break;
 				}
 				inFilter = true;
@@ -402,7 +404,7 @@ void invRecordPage(Record* invRecord) {
 		case 4:
 			while (1) {
 				recID = -1;
-				if (getUIntInput("请输入记录ID:", &recID, ALLINT,true) == INPUT_BREAK) break;
+				breakCatch(getUIntInput("请输入记录ID:", &recID, ALLINT,true)) break;
 				if (rec = recordQueryID(invRecord, recID, 1)) break;
 				else {
 					printf("无此记录。\n");

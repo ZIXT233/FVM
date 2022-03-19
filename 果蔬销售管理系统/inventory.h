@@ -14,15 +14,9 @@ typedef struct tagInventory {
 	ListHead list;
 }Inventory;
 
-inline Inventory* invCreate() {   //构造
-	return (Inventory*)malloc(sizeof(Inventory));
-}
-inline void invDel(Inventory* pos) {  //析构,删除商品信息但不删除其相关记录
-	free(pos);
-}
-inline Inventory* invEntry(ListHead* entry) {
-	return listEntry(entry, Inventory, list);
-}
+Inventory* invCreate();  //构造
+void invDel(Inventory* pos);  //析构,删除商品信息但不删除其相关记录
+Inventory* invEntry(ListHead* entry);
 Inventory* invListInit(Inventory* head);
 void invListClear(Inventory* head);
 Inventory* invQueryID(Inventory* head, int invID);

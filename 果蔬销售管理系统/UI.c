@@ -21,7 +21,6 @@ void drawMenu(const char* title, int n, int firstNum, ...) {
 		char* item = va_arg(args, char*);
 		printf("\t%d.%s\n", firstNum + i, item);
 	}
-	return 0;
 }
 
 void strMakeLen(char* dest, const char* src, int len) {

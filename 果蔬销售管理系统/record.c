@@ -1,6 +1,12 @@
 #include"record.h"
 
 
+Record* recordCreate() {
+	return (Record*)malloc(sizeof(Record));
+}
+void recordDel(Record* pos) { //Îö¹¹
+	free(pos);
+}
 Record* recordListInit(Record* head) {
 	head->recID = 0;
 	head->time = 1;

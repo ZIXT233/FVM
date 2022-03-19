@@ -18,15 +18,12 @@ typedef struct tagRecord {
 
 
 
-inline Record* recordCreate() {
-	return (Record*)malloc(sizeof(Record));
-}
-inline void recordDel(Record* pos) { //Îö¹¹
-	free(pos);
-}
+Record* recordCreate();
+void recordDel(Record* pos); //Îö¹¹
 #define recordEntry(ptr,member) listEntry(ptr, Record, member)
 
 Record* recordListInit(Record* head);
+void recordListClear(Record* head);
 Record* recordQueryID(Record* head, int recID, int direct);
 
 #endif // !RECORD_H
