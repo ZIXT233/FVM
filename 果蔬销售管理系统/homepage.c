@@ -4,8 +4,9 @@
 
 void homepage(FVMO gdata) {
 	while (1) {
-		cls();
-		drawMenu(UI_ORIGIN,"Homepage", 3,1, "销售系统", "库存管理","退出");
+		renderClear(gdata.renderer);
+		drawMenu(gdata.renderer,UI_ORIGIN,"Homepage", 3,1, "销售系统", "库存管理","退出");
+		renderPresent(gdata.renderer);
 		int select = getSelect();
 		switch (select)
 		{

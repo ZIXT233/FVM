@@ -2,26 +2,21 @@
 #define UI_H
 #include<stdio.h>
 #include"fvm_objects.h"
-
-typedef struct tagCoord {
-	int x;
-	int y;
-}Coord;
+#include"renderer.h"
 
 static const Coord UI_ORIGIN = { 1,1 }, INPUT_ORIGIN = { 37,1 }, NAN_COORD = { -1,-1 };
 static const Coord PanelSize = { 35,180 };
-Coord getCursorPos();
-int coordPrintf(Coord pos, const char* const _Format, ...);
-void drawMenu(Coord pos, const char* title, int n, int firstNum, ...);
-void drawInvPage(Coord pos, const char* title, Inventory* start, int pageStartNum, int pageSize);
-void drawInvList(Coord pos, Inventory* start, int height);
-void drawRecordList(Coord pos, Record* start, int record, int height);
+
+void drawRectBorder(Renderer* renderer, Coord pos, Coord const size);
+void drawMenu(Renderer* renderer, Coord pos, const char* title, int n, int firstNum, ...);
+void drawInvPage(Renderer* renderer, Coord pos, const char* title, Inventory* start, int pageStartNum, int pageSize);
+void drawInvList(Renderer* renderer, Coord pos, Inventory* start, int height);
+void drawRecordList(Renderer* renderer, Coord pos, Record* start, int record, int height);
 void showProductDetails(Product* prod);
-void showInvDetails(Inventory* inv);
-void showRecordDetails(Record* rec);
-void drawRectBorder(Coord pos, Coord const size);
-void drawCart(Coord origin, Inventory* start, int height);
-void inputStart(Coord inputOrigin);
+void showInvDetails(Renderer* renderer,Coord pos,Inventory* inv);
+void showRecordDetails(Renderer* renderer,Coord pos,Record* rec);
+void drawCart(Renderer* renderer, Coord origin, Inventory* start, int height);
+void inputStart(Renderer* renderer, Coord inputOrigin);
 
 #define INPUT_BREAK -2
 #define INPUT_NOCHANGE -1

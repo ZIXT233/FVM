@@ -148,6 +148,7 @@
     <ClCompile Include="list.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="record.c" />
+    <ClCompile Include="renderer.c" />
     <ClCompile Include="sale.c" />
     <ClCompile Include="UI.c" />
   </ItemGroup>
@@ -159,6 +160,7 @@
     <ClInclude Include="fvm_objects.h" />
     <ClInclude Include="product.h" />
     <ClInclude Include="record.h" />
+    <ClInclude Include="renderer.h" />
     <ClInclude Include="sale.h" />
     <ClInclude Include="sale_plan.h" />
     <ClInclude Include="statistics.h" />

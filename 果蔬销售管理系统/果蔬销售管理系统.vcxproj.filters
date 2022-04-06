@@ -45,6 +45,9 @@
     <ClCompile Include="sale.c">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="renderer.c">
+      <Filter>源文件\objects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="sale.h">
@@ -79,6 +82,9 @@
     </ClInclude>
     <ClInclude Include="inv_manage.h">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer.h">
+      <Filter>头文件\objects</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

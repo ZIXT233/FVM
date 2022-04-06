@@ -77,9 +77,9 @@ void sale(FVMO gdata) {
 	int select, num;
 	Product filter;
 	while (1) {
-		cls();
-		drawInvPage(cartPos, "购物车",invShowPageJump(cart, &cartPageStart, PageSize), cartPageStart, PageSize);
-		drawMenu(cartMenuPos, "购物车", 5, 11,
+		renderClear(gdata.renderer);
+		drawInvPage(gdata.renderer,cartPos, "购物车",invShowPageJump(cart, &cartPageStart, PageSize), cartPageStart, PageSize);
+		drawMenu(gdata.renderer,cartMenuPos, "购物车", 5, 11,
 			"上一页",
 			"下一页",
 			"移除商品",
@@ -87,14 +87,14 @@ void sale(FVMO gdata) {
 			"清空购物车");
 		if (inFilter) {
 			filterList = invFilterListGen(gdata.inventory, &filter);
-			drawInvPage(saleListPos,"筛选信息", invShowPageJump(filterList, &pageStart, PageSize), pageStart, PageSize);
+			drawInvPage(gdata.renderer,saleListPos,"筛选信息", invShowPageJump(filterList, &pageStart, PageSize), pageStart, PageSize);
 			invListClear(filterList);
 			free(filterList);
 		}
 		else {
-			drawInvPage(saleListPos, "库存信息", invShowPageJump(gdata.inventory, &pageStart, PageSize), pageStart, PageSize);
+			drawInvPage(gdata.renderer, saleListPos, "库存信息", invShowPageJump(gdata.inventory, &pageStart, PageSize), pageStart, PageSize);
 		}
-		drawMenu(saleMenuPos, "商品销售", 7, 1,
+		drawMenu(gdata.renderer, saleMenuPos, "商品销售", 7, 1,
 			"上一页",
 			"下一页",
 			filterOpt[inFilter],
@@ -102,7 +102,8 @@ void sale(FVMO gdata) {
 			"加入购物车",
 			"前往结算",
 			"退出");
-		inputStart(INPUT_ORIGIN);
+		inputStart(gdata.renderer, INPUT_ORIGIN);
+		renderPresent(gdata.renderer);
 		select = getSelect();
 		switch (select)
 		{
@@ -129,7 +130,7 @@ void sale(FVMO gdata) {
 			break;
 		case 4:
 			breakCatch(inputInventoryID(gdata.inventory, &num, &inv)) break;
-			invDetails(inv);
+			invDetails(gdata.renderer,inv);
 			break;
 		case 5:
 			cartAdd(cart,gdata.inventory);

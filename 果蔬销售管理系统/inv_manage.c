@@ -11,15 +11,18 @@ void invManage(FVMO gdata) {
 	int select, num;
 	Product filter;
 	while (1) {
-		cls();
+		renderClear(gdata.renderer);
 		if (inFilter) {
 			filterList = invFilterListGen(gdata.inventory, &filter);
-			drawInvPage((Coord) { 2, 83 },"筛选信息", invShowPageJump(filterList, &pageStart, PageSize), pageStart, PageSize);
+			drawInvPage(gdata.renderer,UI_ORIGIN,"筛选信息", invShowPageJump(filterList, &pageStart, PageSize), pageStart, PageSize);
 			invListClear(filterList);
 			free(filterList);
 		}
-		drawInvPage(invListPos, "库存信息", invShowPageJump(gdata.inventory, &pageStart, PageSize), pageStart, PageSize);
-		drawMenu(invMenuPos, "库存管理", 9, 1,
+		else {
+			drawInvPage(gdata.renderer, invListPos, "库存信息", invShowPageJump(gdata.inventory, &pageStart, PageSize), pageStart, PageSize);
+		}
+		
+		drawMenu(gdata.renderer, invMenuPos, "库存管理", 9, 1,
 			"上一页",
 			"下一页",
 			filterOpt[inFilter],
@@ -29,7 +32,9 @@ void invManage(FVMO gdata) {
 			"仓管记录",
 			"退出",
 			"随机进货");
-		inputStart(INPUT_ORIGIN);
+		inputStart(gdata.renderer, INPUT_ORIGIN);
+		
+		renderPresent(gdata.renderer);
 		select = getSelect();
 		switch (select)
 		{
@@ -60,7 +65,7 @@ void invManage(FVMO gdata) {
 			break;
 		case 5:
 			breakCatch(inputInventoryID(gdata.inventory, &num, &inv)) break;
-			invDetails(inv);
+			invDetails(gdata.renderer,inv);
 			break;
 		case 6:
 			num = getSelect();
@@ -124,7 +129,6 @@ void randomPurchase(FVMO gdata) {
 	return;
 }
 void purchase(FVMO gdata) {
-	cls();
 	Inventory* head = gdata.inventory;
 	Inventory* inv = invCreate();
 	inv->invRecord = recordListInit(recordCreate());
@@ -147,24 +151,26 @@ void purchase(FVMO gdata) {
 	return;
 }
 
-void invDetails(Inventory* inv) {
+void invDetails(Renderer* renderer, Inventory* inv) {
 	int invID, select;
 	struct tm date;
 
 	while (1) {
-		cls();
-		showInvDetails(inv);
-		drawMenu(getCursorPos(), "商品详情", 3, 1,
+		renderClear(renderer);
+		showInvDetails(renderer,UI_ORIGIN,inv);
+		drawMenu(renderer, (Coord) { 20, 3 }, "商品详情", 3, 1,
 			"修改信息",
 			"仓管记录",
 			"退出");
+		inputStart(renderer, INPUT_ORIGIN);
+		renderPresent(renderer);
 		select = getSelect();
 		switch (select)
 		{
 		case 1:
 			break;
 		case 2:
-			invRecordPage(inv->invRecord);
+			invRecordPage(renderer,inv->invRecord);
 			break;
 		case 3:
 			return;
@@ -203,17 +209,17 @@ void recordPage(FVMO gdata) {
 	Inventory* inv = NULL;
 	Record* rec = NULL;
 	while (1) {
-		cls();
+		renderClear(gdata.renderer);
 		if (inFilter) {
 			filterList = recordFilterListGen(gdata.record, TIME_RECORDS, &filter);
-			drawRecordList(UI_ORIGIN, recordShowPageJump(filterList, TIME_RECORDS, &pageStart, PageSize),TIME_RECORDS, PageSize);
+			drawRecordList(gdata.renderer,UI_ORIGIN, recordShowPageJump(filterList, TIME_RECORDS, &pageStart, PageSize),TIME_RECORDS, PageSize);
 			recordListClear(filterList);
 			free(filterList);
 		}
 		else {
-			drawRecordList(UI_ORIGIN, recordShowPageJump(gdata.record, TIME_RECORDS, &pageStart, PageSize),TIME_RECORDS, PageSize);
+			drawRecordList(gdata.renderer, UI_ORIGIN, recordShowPageJump(gdata.record, TIME_RECORDS, &pageStart, PageSize),TIME_RECORDS, PageSize);
 		}
-		drawMenu(getCursorPos(), "仓管记录", 8, 1,
+		drawMenu(gdata.renderer, invMenuPos, "仓管记录", 8, 1,
 			"上一页",
 			"下一页",
 			filterOpt[inFilter],
@@ -222,6 +228,8 @@ void recordPage(FVMO gdata) {
 			"记录删除",
 			"记录更改替换",
 			"退出");
+		inputStart(gdata.renderer,INPUT_ORIGIN);
+		renderPresent(gdata.renderer);
 		select = getSelect();
 		switch (select)
 		{
@@ -248,7 +256,7 @@ void recordPage(FVMO gdata) {
 			break;
 		case 4:
 			breakCatch(inputInventoryID(gdata.inventory, &num, &inv)) break;
-			invRecordPage(inv->invRecord);
+			invRecordPage(gdata.renderer,inv->invRecord);
 			break;
 		case 5:
 			while (1) {
@@ -260,7 +268,7 @@ void recordPage(FVMO gdata) {
 				}
 			}
 			if (recID < 0) break;
-			recDetails(rec);
+			recDetails(gdata.renderer,rec);
 			break;
 		case 6:
 			num = getSelect();
@@ -280,7 +288,7 @@ void recordPage(FVMO gdata) {
 
 	}
 }
-void invRecordPage(Record* invRecord) {
+void invRecordPage(Renderer* renderer,Record* invRecord) {
 	int inFilter = 0;
 	int pageStart = 1, pageStartSave = 1;
 	char filterOpt[2][20] = { "记录筛选","取消筛选" };
@@ -291,17 +299,17 @@ void invRecordPage(Record* invRecord) {
 	Inventory* inv = NULL;
 	Record* rec = NULL;
 	while (1) {
-		cls();
+		renderClear(renderer);
 		if (inFilter) {
 			filterList = recordFilterListGen(invRecord, INV_RECORDS, &filter);
-			drawRecordList(UI_ORIGIN, recordShowPageJump(filterList, INV_RECORDS, &pageStart, PageSize),INV_RECORDS, PageSize);
+			drawRecordList(renderer, UI_ORIGIN, recordShowPageJump(filterList, INV_RECORDS, &pageStart, PageSize),INV_RECORDS, PageSize);
 			recordListClear(filterList);
 			free(filterList);
 		}
 		else {
-			drawRecordList(UI_ORIGIN, recordShowPageJump(invRecord, INV_RECORDS, &pageStart, PageSize),INV_RECORDS, PageSize);
+			drawRecordList(renderer, UI_ORIGIN, recordShowPageJump(invRecord, INV_RECORDS, &pageStart, PageSize),INV_RECORDS, PageSize);
 		}
-		drawMenu(getCursorPos(), "仓管记录", 7, 1,
+		drawMenu(renderer,invMenuPos, "仓管记录", 7, 1,
 			"上一页",
 			"下一页",
 			filterOpt[inFilter],
@@ -309,6 +317,8 @@ void invRecordPage(Record* invRecord) {
 			"记录删除",
 			"记录更改替换",
 			"退出");
+		inputStart(renderer, INPUT_ORIGIN);
+		renderPresent(renderer);
 		select = getSelect();
 		switch (select) {
 		case 1:
@@ -342,7 +352,7 @@ void invRecordPage(Record* invRecord) {
 				}
 			}
 			if (recID < 0) break;
-			recDetails(rec);
+			recDetails(renderer,rec);
 			break;
 		case 5:
 			num = getSelect();
@@ -363,16 +373,18 @@ void invRecordPage(Record* invRecord) {
 	}
 }
 
-void recDetails(Record* record) {
+void recDetails(Renderer* renderer,Record* record) {
 	int invID, select;
 	Inventory* inv;
 	struct tm date;
 	while (1) {
-		cls();
+		renderClear(renderer);
 
-		showRecordDetails(record);
-		drawMenu(getCursorPos(), "记录详情", 1, 1,
+		showRecordDetails(renderer,UI_ORIGIN,record);
+		drawMenu(renderer, (Coord) { 20, 3 }, "记录详情", 1, 1,
 			"退出");
+		inputStart(renderer, INPUT_ORIGIN);
+		renderPresent(renderer);
 		select = getSelect();
 		switch (select)
 		{

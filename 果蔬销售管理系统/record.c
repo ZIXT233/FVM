@@ -48,13 +48,13 @@ int recordMatch(const Record* rec, const Record* filter) {
 }
 
 Record* recordFilterListGen(const Record* head, int type,const Record* filter) {
-	Record* showPage = recordListInit(recordCreate()), * cp;
+	Record* filterList = recordListInit(recordCreate()), * cp;
 	if (type == TIME_RECORDS) {
 		listForEachEntry(Record, pos, &head->timeList, timeList) {
 			if (!recordMatch(pos, filter)) continue;
 			cp = recordCreate();
 			memcpy(cp, pos, sizeof(Record));
-			listAddTail(&cp->timeList, &showPage->timeList);
+			listAddTail(&cp->timeList, &filterList->timeList);
 		}
 	}
 	else if (type == INV_RECORDS) {
@@ -62,9 +62,10 @@ Record* recordFilterListGen(const Record* head, int type,const Record* filter) {
 			if (!recordMatch(pos, filter)) continue;
 			cp = recordCreate();
 			memcpy(cp, pos, sizeof(Record));
-			listAddTail(&cp->IRList, &showPage->IRList);
+			listAddTail(&cp->IRList, &filterList->IRList);
 		}
 	}
+	return filterList;
 }
 
 Record* recordShowPageJump(const Record* head,int type, int* pageStart, const int pageSize) {
