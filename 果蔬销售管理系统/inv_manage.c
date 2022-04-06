@@ -1,49 +1,25 @@
 #include<string.h>
 #include"inv_manage.h"
 
-const int PageSize = 15;
-int productMatch(const Product* inv, const Product* filter) {
-	if (filter == NULL) return 1;
-	if (filter->kind[0] != '\0' && strcmp(filter->kind, inv->kind) != 0) return 0;
-	if (filter->variety[0] != '\0' && strcmp(filter->variety, inv->variety) != 0) return 0;
-	if (filter->pack != 0 && filter->pack != inv->pack) return 0;
-	if (filter->expiration != TIME_NAN && filter->expiration < inv->expiration) return 0;
-	return 1;
-}
-Inventory* invShowPageGen(const Inventory* head, const Product* filter, int* pageStart) {
-	Inventory* showPage = invListInit(invCreate()), * cp;
-	while (1) {
-		int num = 1;
-		listForEachEntry(Inventory, pos, &head->list, list) {
-			if (num >= *pageStart + PageSize) break;
-			if (!productMatch(&pos->prod, filter)) continue;
-			if (num >= *pageStart) {
-				cp = invCreate();
-				memcpy(cp, pos, sizeof(Inventory));
-				listAddTail(&cp->list, &showPage->list);
-			}
-			num++;
-		}
-		if (showPage->list.size != 0 || *pageStart == 1) return showPage;
-		else *pageStart -= PageSize;
-	}
-}
-
+static const int PageSize = 15;
 
 void invManage(FVMO gdata) {
 	int inFilter = 0;
 	int pageStart = 1, pageStartSave = 1;
 	char filterOpt[2][20] = { "商品筛选","取消筛选" };
-	Inventory* showPage = NULL,*inv=NULL;
+	Inventory* filterList = NULL, * inv = NULL;
 	int select, num;
 	Product filter;
 	while (1) {
 		cls();
-		showPage = invShowPageGen(gdata.inventory, inFilter ? &filter : NULL, &pageStart);
-		drawInvList(showPage, PageSize);
-		invListClear(showPage);
-		free(showPage);
-		drawMenu("库存管理", 9,1,
+		if (inFilter) {
+			filterList = invFilterListGen(gdata.inventory, &filter);
+			drawInvPage((Coord) { 2, 83 },"筛选信息", invShowPageJump(filterList, &pageStart, PageSize), pageStart, PageSize);
+			invListClear(filterList);
+			free(filterList);
+		}
+		drawInvPage(invListPos, "库存信息", invShowPageJump(gdata.inventory, &pageStart, PageSize), pageStart, PageSize);
+		drawMenu(invMenuPos, "库存管理", 9, 1,
 			"上一页",
 			"下一页",
 			filterOpt[inFilter],
@@ -53,6 +29,7 @@ void invManage(FVMO gdata) {
 			"仓管记录",
 			"退出",
 			"随机进货");
+		inputStart(INPUT_ORIGIN);
 		select = getSelect();
 		switch (select)
 		{
@@ -78,17 +55,11 @@ void invManage(FVMO gdata) {
 			}
 			break;
 		case 4:
-			
+
 			purchase(gdata);
 			break;
 		case 5:
-			while (1) {
-				breakCatch(getUIntInput("请输入商品ID:", &num, ALLINT, true)) return;
-				if (inv = invQueryID(gdata.inventory, num)) break;
-				else {
-					printf("库存无此商品。\n");
-				}
-			}
+			breakCatch(inputInventoryID(gdata.inventory, &num, &inv)) break;
 			invDetails(inv);
 			break;
 		case 6:
@@ -179,11 +150,11 @@ void purchase(FVMO gdata) {
 void invDetails(Inventory* inv) {
 	int invID, select;
 	struct tm date;
-	
+
 	while (1) {
 		cls();
 		showInvDetails(inv);
-		drawMenu("商品详情", 3,1,
+		drawMenu(getCursorPos(), "商品详情", 3, 1,
 			"修改信息",
 			"仓管记录",
 			"退出");
@@ -215,71 +186,34 @@ Inventory* creatRandInv() {
 	inv->prod.expiration = time(NULL) * 1.5 * rand() / RAND_MAX;
 	inv->prod.purUPrice = 300 * (double)rand() / RAND_MAX;
 	inv->prod.unitPrice = inv->prod.purUPrice + 20.0 * rand() / RAND_MAX;
-	if (inv->prod.pack == UNIT) inv->prod.quantity = rand()*100;
+	if (inv->prod.pack == UNIT) inv->prod.quantity = rand() * 100;
 	else inv->prod.weight = (double)10000 * rand() / RAND_MAX;
 	inv->invRecord = recordListInit(recordCreate());
 	return inv;
 }
-
-int recordMatch(const Record* rec, const Record* filter) {
-	if (filter == NULL) return 1;
-	if (!productMatch(&rec->prod, &filter->prod))return 0;
-	if (filter->type != 0 && filter->type != rec->type) return 0;
-	if (filter->time != TIME_NAN && filter->time > rec->time) return 0;
-	if (filter->lastTime != TIME_NAN && filter->lastTime < rec->time) return 0;
-	return 1;
-}
-Record* recordShowPageGen(const Record* head, const Record* filter, int* pageStart, int direct) {
-	Record* showPage = recordListInit(recordCreate()), * cp;
-	while (1) {
-		int num = 1;
-		if (direct == 0) {
-			listForEachEntry(Record, pos, &head->timeList, timeList) {
-				if (num >= *pageStart + PageSize) break;
-				if (!recordMatch(pos, filter)) continue;
-				if (num >= *pageStart) {
-					cp = recordCreate();
-					memcpy(cp, pos, sizeof(Record));
-					listAddTail(&cp->timeList, &showPage->timeList);
-				}
-				num++;
-			}
-		}
-		else if (direct == 1) {
-			listForEachEntry(Record, pos, &head->IRList, IRList) {
-				if (num >= *pageStart + PageSize) break;
-				if (!recordMatch(pos, filter)) continue;
-				if (num >= *pageStart) {
-					cp = recordCreate();
-					memcpy(cp, pos, sizeof(Record));
-					listAddTail(&cp->timeList, &showPage->timeList);
-				}
-				num++;
-			}
-		}
-		if (showPage->timeList.size != 0 || *pageStart == 1) return showPage;
-		else *pageStart -= PageSize;
-	}
-}
-
 
 
 void recordPage(FVMO gdata) {
 	int inFilter = 0;
 	int pageStart = 1, pageStartSave = 1;
 	char filterOpt[2][20] = { "记录筛选","取消筛选" };
-	Record* showPage = NULL;
+	Record* showPage = NULL, * filterList = NULL;
 	int select, num, invID, recID;
 	Record filter;
 	Inventory* inv = NULL;
 	Record* rec = NULL;
 	while (1) {
 		cls();
-		showPage = recordShowPageGen(gdata.record, inFilter ? &filter : NULL, &pageStart, 0);
-		drawRecordList(showPage, PageSize);
-		recordListClear(showPage);
-		free(showPage);
-		drawMenu("仓管记录", 8,1,
+		if (inFilter) {
+			filterList = recordFilterListGen(gdata.record, TIME_RECORDS, &filter);
+			drawRecordList(UI_ORIGIN, recordShowPageJump(filterList, TIME_RECORDS, &pageStart, PageSize),TIME_RECORDS, PageSize);
+			recordListClear(filterList);
+			free(filterList);
+		}
+		else {
+			drawRecordList(UI_ORIGIN, recordShowPageJump(gdata.record, TIME_RECORDS, &pageStart, PageSize),TIME_RECORDS, PageSize);
+		}
+		drawMenu(getCursorPos(), "仓管记录", 8, 1,
 			"上一页",
 			"下一页",
 			filterOpt[inFilter],
@@ -313,21 +247,13 @@ void recordPage(FVMO gdata) {
 			}
 			break;
 		case 4:
-			while (1) {
-				invID = -1;
-				breakCatch (getUIntInput("请输入商品ID:", &invID,ALLINT, true)) break;
-				if (inv = invQueryID(gdata.inventory, invID)) break;
-				else {
-					printf("库存无此商品。\n");
-				}
-			}
-			if (invID < 0) break;
+			breakCatch(inputInventoryID(gdata.inventory, &num, &inv)) break;
 			invRecordPage(inv->invRecord);
 			break;
 		case 5:
 			while (1) {
 				recID = -1;
-				breakCatch(getUIntInput("请输入记录ID:", &recID, ALLINT,true)) break;
+				breakCatch(getUIntInput("请输入记录ID:", &recID, ALLINT, true)) break;
 				if (rec = recordQueryID(gdata.record, recID, 0)) break;
 				else {
 					printf("无此记录。\n");
@@ -358,7 +284,7 @@ void invRecordPage(Record* invRecord) {
 	int inFilter = 0;
 	int pageStart = 1, pageStartSave = 1;
 	char filterOpt[2][20] = { "记录筛选","取消筛选" };
-	Record* showPage = NULL;
+	Record* filterList = NULL;
 	int select, num;
 	int invID, recID;
 	Record filter;
@@ -366,11 +292,16 @@ void invRecordPage(Record* invRecord) {
 	Record* rec = NULL;
 	while (1) {
 		cls();
-		showPage = recordShowPageGen(invRecord, inFilter ? &filter : NULL, &pageStart, 1);
-		drawRecordList(showPage, PageSize);
-		recordListClear(showPage);
-		free(showPage);
-		drawMenu("仓管记录", 7,1,
+		if (inFilter) {
+			filterList = recordFilterListGen(invRecord, INV_RECORDS, &filter);
+			drawRecordList(UI_ORIGIN, recordShowPageJump(filterList, INV_RECORDS, &pageStart, PageSize),INV_RECORDS, PageSize);
+			recordListClear(filterList);
+			free(filterList);
+		}
+		else {
+			drawRecordList(UI_ORIGIN, recordShowPageJump(invRecord, INV_RECORDS, &pageStart, PageSize),INV_RECORDS, PageSize);
+		}
+		drawMenu(getCursorPos(), "仓管记录", 7, 1,
 			"上一页",
 			"下一页",
 			filterOpt[inFilter],
@@ -404,7 +335,7 @@ void invRecordPage(Record* invRecord) {
 		case 4:
 			while (1) {
 				recID = -1;
-				breakCatch(getUIntInput("请输入记录ID:", &recID, ALLINT,true)) break;
+				breakCatch(getUIntInput("请输入记录ID:", &recID, ALLINT, true)) break;
 				if (rec = recordQueryID(invRecord, recID, 1)) break;
 				else {
 					printf("无此记录。\n");
@@ -440,7 +371,7 @@ void recDetails(Record* record) {
 		cls();
 
 		showRecordDetails(record);
-		drawMenu("记录详情", 1,1,
+		drawMenu(getCursorPos(), "记录详情", 1, 1,
 			"退出");
 		select = getSelect();
 		switch (select)

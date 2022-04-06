@@ -25,5 +25,10 @@ void recordDel(Record* pos); //Îö¹¹
 Record* recordListInit(Record* head);
 void recordListClear(Record* head);
 Record* recordQueryID(Record* head, int recID, int direct);
+int recordMatch(const Record* rec, const Record* filter);
+#define TIME_RECORDS 0
+#define INV_RECORDS 1
+Record* recordFilterListGen(const Record* head, int type, const Record* filter);
+Record* recordShowPageJump(const Record* head, int type, int* pageStart, const int pageSize);
 
 #endif // !RECORD_H

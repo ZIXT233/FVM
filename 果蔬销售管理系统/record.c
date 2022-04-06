@@ -20,7 +20,7 @@ void recordListClear(Record* head) {
 		recordDel(pos);
 	}
 }
-Record* recordQueryID(Record* head, int recID,int direct) {
+Record* recordQueryID(Record* head, int recID, int direct) {
 	if (direct == 0) {
 		listForEachEntry(Record, pos, &head->timeList, timeList) {
 			if (pos->recID == recID) {
@@ -36,4 +36,59 @@ Record* recordQueryID(Record* head, int recID,int direct) {
 		}
 	}
 	return NULL;
+}
+
+int recordMatch(const Record* rec, const Record* filter) {
+	if (filter == NULL) return 1;
+	if (!productMatch(&rec->prod, &filter->prod))return 0;
+	if (filter->type != 0 && filter->type != rec->type) return 0;
+	if (filter->time != TIME_NAN && filter->time > rec->time) return 0;
+	if (filter->lastTime != TIME_NAN && filter->lastTime < rec->time) return 0;
+	return 1;
+}
+
+Record* recordFilterListGen(const Record* head, int type,const Record* filter) {
+	Record* showPage = recordListInit(recordCreate()), * cp;
+	if (type == TIME_RECORDS) {
+		listForEachEntry(Record, pos, &head->timeList, timeList) {
+			if (!recordMatch(pos, filter)) continue;
+			cp = recordCreate();
+			memcpy(cp, pos, sizeof(Record));
+			listAddTail(&cp->timeList, &showPage->timeList);
+		}
+	}
+	else if (type == INV_RECORDS) {
+		listForEachEntry(Record, pos, &head->IRList, IRList) {
+			if (!recordMatch(pos, filter)) continue;
+			cp = recordCreate();
+			memcpy(cp, pos, sizeof(Record));
+			listAddTail(&cp->IRList, &showPage->IRList);
+		}
+	}
+}
+
+Record* recordShowPageJump(const Record* head,int type, int* pageStart, const int pageSize) {
+	Record* showPage = head;
+	while (1) {
+		int num = 1;
+		if (type == TIME_RECORDS) {
+			listForEachEntry(Record, pos, &head->timeList, timeList) {
+				if (num == *pageStart) {
+					showPage = recordEntry(pos->timeList.prev, timeList);
+					break;
+				}
+				num++;
+			}
+		}else if (type == INV_RECORDS) {
+			listForEachEntry(Record, pos, &head->IRList,IRList ) {
+				if (num == *pageStart) {
+					showPage = recordEntry(pos->IRList.prev, IRList);
+					break;
+				}
+				num++;
+			}
+		}
+		if (showPage != head || *pageStart == 1) return showPage;
+		else *pageStart -= pageSize;
+	}
 }

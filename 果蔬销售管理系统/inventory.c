@@ -33,3 +33,30 @@ Inventory* invQueryID(Inventory* head, int invID) {
 	}
 	return NULL;
 }
+
+Inventory* invFilterListGen(const Inventory* head, const Product* filter) {
+	Inventory* filterList = invListInit(invCreate()), * cp;
+	listForEachEntry(Inventory, pos, &head->list, list) {
+		if (!productMatch(&pos->prod, filter)) continue;
+		cp = invCreate();
+		memcpy(cp, pos, sizeof(Inventory));
+		listAddTail(&cp->list, &filterList->list);
+	}
+	return filterList;
+}
+
+Inventory* invShowPageJump(const Inventory* head, int* pageStart, const int pageSize) {
+	Inventory* showPage = head;
+	while (1) {
+		int num = 1;
+		listForEachEntry(Inventory, pos, &head->list, list) {
+			if (num == *pageStart) {
+				showPage = invEntry(pos->list.prev);
+				break;
+			}
+			num++;
+		}
+		if (showPage != head || *pageStart == 1) return showPage;
+		else *pageStart -= pageSize;
+	}
+}

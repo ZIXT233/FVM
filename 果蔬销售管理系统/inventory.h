@@ -20,4 +20,6 @@ Inventory* invEntry(ListHead* entry);
 Inventory* invListInit(Inventory* head);
 void invListClear(Inventory* head);
 Inventory* invQueryID(Inventory* head, int invID);
+Inventory* invFilterListGen(const Inventory* head, const Product* filter);
+Inventory* invShowPageJump(const Inventory* head, int* pageStart, const int pageSize);
 #endif // !INVENTORY_H

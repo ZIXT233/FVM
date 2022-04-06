@@ -10,4 +10,6 @@ void recordPage(FVMO gdata);
 void invRecordPage(Record* invRecord);
 void recDetails(Record* record);
 void randomPurchase(FVMO gdata);
+
+static const Coord invListPos = { 2,3 }, invMenuPos = { 21,3 };
 #endif
