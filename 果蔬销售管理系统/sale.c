@@ -19,7 +19,7 @@ void cartAdd(Inventory* cart, Inventory* head) {
 			item->prod.quantity = quantity;
 		}
 		else if (item->prod.pack == BULK) {
-			breakDeliver(getDoubleInput("请输入购买重量:", &weight, (DoubleRange) { 0.01, inv->prod.weight }, true));
+			breakDeliver(getDoubleInput("请输入购买重量:", &weight, (DoubleRange) { WMINI, inv->prod.weight }, true));
 			item->prod.weight = weight;
 		}
 		listAddTail(&item->list, &cart->list);
@@ -30,8 +30,14 @@ void cartAdd(Inventory* cart, Inventory* head) {
 			item->prod.quantity += quantity;
 		}
 		else if (inv->prod.pack == BULK) {
-			breakDeliver(getDoubleInput("请输入购买重量:", &weight, (DoubleRange) { 0.01, inv->prod.weight - item->prod.weight }, true));
-			item->prod.weight += weight;
+			if (inv->prod.weight - item->prod.weight < WMINI) {
+				printf("没有更多商品");
+				getchar();
+			}
+			else {
+				breakDeliver(getDoubleInput("请输入购买重量:", &weight, (DoubleRange) { WMINI, inv->prod.weight - item->prod.weight }, true));
+				item->prod.weight += weight;
+			}
 		}
 	}
 
@@ -42,6 +48,7 @@ void cartDelete(Inventory* cart) {
 	breakDeliver(inputInventoryID(cart, &id, &inv));
 	if (inv) {
 		listRemove(&inv->list);
+		invDel(inv);
 	}
 }
 void cartQuantityModify(Inventory* cart, Inventory* head) {

@@ -9,6 +9,7 @@ typedef struct tagRecord {
 	Product prod;
 	enum RecordType { PURCHASE=1, SALE, UPDATE, GIFT } type;
 	int invID, recID;
+	int SSPID, CSPID;
 	time_t time;
 	char addInfo[INFOMAX];
 	ListHead timeList;  //master,default list

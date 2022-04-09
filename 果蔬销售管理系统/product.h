@@ -27,6 +27,7 @@ typedef struct tagDoubleRange {
 
 static const IntRange QRANGE = { 0,1e7 }, ALLINT = { 0,-1 };
 static const DoubleRange WRANGE = { 0,1e7 },UPRINCERANGE = { 0,1e8 }, ALLDOUBLE = { 0,-1 };		
+static const double WMINI = 0.01;
 static inline int productMatch(const Product* inv, const Product* filter) {
 	if (filter == NULL) return 1;
 	if (filter->kind[0] != '\0' && strcmp(filter->kind, inv->kind) != 0) return 0;

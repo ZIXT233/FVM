@@ -56,3 +56,18 @@ ListHead* listMove(ListHead* pos, int step) {
 		return dest;
 	}
 }
+ListHead* listShowPageJump(ListHead* head, int* pageStart, const int pageSize) {
+	ListHead* showPage = head;
+	while (1) {
+		int num = 1;
+		listForEach(pos, head) {
+			if (num == *pageStart) {
+				showPage = pos->prev;
+				break;
+			}
+			num++;
+		}
+		if (showPage != head || *pageStart == 1) return showPage;
+		else *pageStart -= pageSize;
+	}
+}

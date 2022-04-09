@@ -48,6 +48,12 @@
     <ClCompile Include="renderer.c">
       <Filter>源文件\objects</Filter>
     </ClCompile>
+    <ClCompile Include="sale_plan.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="sale_plan_manage.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="sale.h">
@@ -85,6 +91,9 @@
     </ClInclude>
     <ClInclude Include="renderer.h">
       <Filter>头文件\objects</Filter>
+    </ClInclude>
+    <ClInclude Include="sale_plan_manage.h">
+      <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

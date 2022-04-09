@@ -374,12 +374,9 @@ void invRecordPage(Renderer* renderer,Record* invRecord) {
 }
 
 void recDetails(Renderer* renderer,Record* record) {
-	int invID, select;
-	Inventory* inv;
-	struct tm date;
-	while (1) {
+	int select;
+	while (1) {	
 		renderClear(renderer);
-
 		showRecordDetails(renderer,UI_ORIGIN,record);
 		drawMenu(renderer, (Coord) { 20, 3 }, "¼ÇÂ¼ÏêÇé", 1, 1,
 			"ÍË³ö");
@@ -393,10 +390,7 @@ void recDetails(Renderer* renderer,Record* record) {
 		default:
 			break;
 		}
-
 	}
-
-
 }
 /*
 void invManage(FVMO gdata) {

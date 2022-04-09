@@ -55,5 +55,6 @@ void listRemove(ListHead* entry); //注意该函数只移除节点不释放内存
 int listSize(ListHead* head);
 int listEmpty(ListHead* head);
 ListHead* listMove(ListHead* pos, int step);
+ListHead* listShowPageJump(ListHead* head, int* pageStart, const int pageSize);
 
 #endif

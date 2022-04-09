@@ -205,6 +205,58 @@ void drawRecordList(Renderer *renderer, Coord origin,Record* start,int type, int
 	setCursorPos(renderer,origin);
 }
 
+void drawListPage(Renderer* renderer, Coord origin, const char* title, ListDrawer drawer,ListHead* start,int pageStartNum, int pageSize,Coord rectSize) {
+	Coord titleRect;
+	titleRect.x = 1;
+	titleRect.y = rectSize.y;
+	drawRectBorder(renderer, origin, titleRect);
+	if (pageSize + 3 > rectSize.x) rectSize.x = pageSize + 3;
+	drawRectBorder(renderer, origin, rectSize);
+	coordPrintf(renderer, (Coord) { origin.x + 1, origin.y + rectSize.y / 2 - strlen(title) / 2 }, "%s", title);
+	coordPrintf(renderer, (Coord) { origin.x + 1, origin.y + rectSize.y - 7 }, "%d/%d页", ((pageStartNum - 1) / pageSize) + 1, ((start->root->size - 1) / pageSize) + 1);
+	origin.x += 3;
+	origin.y++;
+	drawer(renderer, origin, start, pageSize);
+}
+void drawSSPList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize) {
+	SSP* start = listEntry(entry, SSP, list);
+	coordPrintf(renderer, origin, "方案名\t\t方案ID");
+	origin.x++;
+	int n = 0;
+	char name[INFOMAX];
+
+	listForEachEntry(SSP, pos, &(start->list), list) {
+		if (n == pageSize) break;
+		strMakeLen(name, pos->planName, 20);
+		coordPrintf(renderer, origin, "%s\t%d", name,pos->SSPID);
+		origin.x++;
+		n++;
+	}
+	while (n++ != pageSize) origin.x++;
+	origin.y--;
+	origin.x++;
+	setCursorPos(renderer, origin);
+
+}
+void drawCSPList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize) {
+	CSP* start = listEntry(entry, CSP, list);
+	coordPrintf(renderer, origin, "方案名\t\t方案ID");
+	origin.x++;
+	int n = 0;
+	char name[INFOMAX];
+
+	listForEachEntry(CSP, pos, &(start->list), list) {
+		if (n == pageSize) break;
+		strMakeLen(name, pos->planName, 20);
+		coordPrintf(renderer, origin, "%s\t%d",name, pos->CSPID);
+		origin.x++;
+		n++;
+	}
+	while (n++ != pageSize) origin.x++;
+	origin.y--;
+	origin.x++;
+	setCursorPos(renderer, origin);
+}
 void inputStart(Renderer* renderer, Coord inputOrigin) {
 	setCursorPos(renderer, inputOrigin);
 	renderPrintf(renderer, ESC "(0");
@@ -358,6 +410,36 @@ int inputInventoryID(const Inventory* head, int* id, Inventory** pInv) {
 		}
 	}
 }
+int inputRecordID(const Record* head, int type,int* id, Record** pRec) {
+	*pRec = NULL;
+	while (1) {
+		breakDeliver(getUIntInput("请输入记录ID:", id, ALLINT, true));
+		if (*pRec = recordQueryID(head,*id,type)) return;
+		else {
+			printf("查无此记录。\n");
+		}
+	}
+}
+int inputSSPID(const SSP* head, int* id, SSP** pSSP) {
+	*pSSP = NULL;
+	while (1) {
+		breakDeliver(getUIntInput("请输入单品销售方案ID:", id, ALLINT, true));
+		if (*pSSP = SSPQueryID(head, *id)) return;
+		else {
+			printf("查无此方案。\n");
+		}
+	}
+}
+int inputCSPID(const CSP* head, int* id, CSP** pCSP) {
+	*pCSP = NULL;
+	while (1) {
+		breakDeliver(getUIntInput("请输入组合销售方案ID:", id, ALLINT, true));
+		if (*pCSP = CSPQueryID(head, *id)) return;
+		else {
+			printf("查无此方案。\n");
+		}
+	}
+}
 
 int inputProduct(Product* prod) {
 	breakDeliver(getStrInput("输入种类:", prod->kind, INFOMAX, true));
@@ -378,6 +460,19 @@ int inputProduct(Product* prod) {
 	//if (prod->pack == BULK) prod->amount = prod->unitPrice * prod->weight;  
 	//else if (prod->pack == UNIT) prod->amount = prod->unitPrice * prod->quantity;
 	return INPUT_SUCCESS;
+}
+int inputGift(Gift* gift,Inventory* invHead) {
+	memset(gift, 0, sizeof(gift));
+	Inventory* inv=NULL;
+	breakDeliver(inputInventoryID(invHead, &gift->invID, &inv));
+	if (inv->prod.pack == BULK) {
+		breakDeliver(getDoubleInput("输入赠送重量:",&gift->weight,(DoubleRange){0,inv->prod.weight},true));
+	}
+	else if (inv->prod.pack == UNIT) {
+		breakDeliver(getUIntInput("输入赠送数量:", &gift->quantity, (IntRange) { 0, inv->prod.quantity }, true));
+	}
+	breakDeliver(GetDoubleClickTime("输入附加金额(可选，作为余额赠品)", &gift->addPrice,UPRINCERANGE, false));
+	return READ_SUCCESS;
 }
 int inputProductFilter(Product* prod) {
 	memset(prod, 0, sizeof(Product));

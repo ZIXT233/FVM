@@ -13,6 +13,8 @@ int main(void) {
 	FVMO gdata;
 	gdata.inventory = invListInit(invCreate());
 	gdata.record = recordListInit(recordCreate());
+	gdata.SSP = SSPListInit(SSPCreate());
+	gdata.CSP = CSPListInit(CSPCreate());
 	gdata.renderer = rendererCreate(5000);
 	homepage(gdata);
 	rendererDelete(gdata.renderer);
