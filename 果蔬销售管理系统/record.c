@@ -1,14 +1,21 @@
+#include<string.h>
 #include"record.h"
 
 
 Record* recordCreate() {
-	return (Record*)malloc(sizeof(Record));
+	Record* _new = (Record*)malloc(sizeof(Record));
+	memset(_new, 0, sizeof(Record));
+	return _new;
 }
 void recordDel(Record* pos) { //Îö¹¹
 	free(pos);
 }
+void recordIDAllocate(Record* pos, Record* head) {
+	pos->recID = ++head->recIDCnt;
+}
 Record* recordListInit(Record* head) {
 	head->recID = 0;
+	head->recIDCnt = RecordIDBase;
 	head->time = 1;
 	listInit(&head->timeList);
 	listInit(&head->IRList);

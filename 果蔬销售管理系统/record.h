@@ -5,25 +5,29 @@
 #include"product.h"
 #include<stdlib.h>
 
+
 typedef struct tagRecord {
 	Product prod;
 	enum RecordType { PURCHASE=1, SALE, UPDATE, GIFT } type;
 	int invID, recID;
 	int SSPID, CSPID;
+	int recIDCnt;
 	time_t time;
 	char addInfo[INFOMAX];
+	double discount;
 	ListHead timeList;  //master,default list
 	ListHead IRList;  //records of same inventory
 	time_t lastTime;  //used as filter
 }Record;
 
 
-
+static const int RecordIDBase = 0000;
 Record* recordCreate();
 void recordDel(Record* pos); //Îö¹¹
 #define recordEntry(ptr,member) listEntry(ptr, Record, member)
 
 Record* recordListInit(Record* head);
+void recordIDAllocate(Record *pos,Record* head);
 void recordListClear(Record* head);
 Record* recordQueryID(Record* head, int recID, int direct);
 int recordMatch(const Record* rec, const Record* filter);

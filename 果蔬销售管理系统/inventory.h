@@ -9,13 +9,18 @@
 
 typedef struct tagInventory {
 	int invID;
+	int invIDCnt;
 	Product prod;
 	Record* invRecord;
 	ListHead list;
 }Inventory;
 
+static const int InventoryIDBase = 0;
 Inventory* invCreate();  //构造
+Inventory* invCopyCreate(const Inventory* src);
+
 void invDel(Inventory* pos);  //析构,删除商品信息但不删除其相关记录
+void invIDAllocate(Inventory* pos, Inventory* head);
 Inventory* invEntry(ListHead* entry);
 Inventory* invListInit(Inventory* head);
 void invListClear(Inventory* head);

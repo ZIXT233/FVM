@@ -3,42 +3,47 @@
 #include"fvm_objects.h"
 #include"UI.h"
 
-static const PageSize = 15;
-static Coord SSPListPos = { 2,3 }, SSPMenuPos = { 22,3 };
-static Coord CSPListPos = { 2,43 }, CSPMenuPos = { 22,43 };
-static Coord invListPos = { 2,83 }, invMenuPos = { 22,83 };
+static const int PageSize = 15;
+static const Coord SSPListPos = { 2,3 }, SSPMenuPos = { 22,3 }, SSPDetailsPos = { 2,3 }, SSPDetailsMenuPos = { 22,3 };
+static const Coord SSPGiftPos = { 2,57 }, SSPGiftMenuPos = { 22,57 }, GiftRectSize = { 18,65 };
+static const Coord CSPListPos = { 2,43 }, CSPMenuPos = { 22,43 }, CSPDetailsPos = { 2,3 }, CSPDetailsMenuPos = { 22,3 };
+static const Coord CSPComInvPos = { 2,43 }, CSPComInvMenuPos = { 22,43 }, CSPComInvRectSize = { 18,40 };
+static const Coord CSPGiftPos = { 2,99 }, CSPGiftMenuPos = { 22,99 };
+static const Coord invListPos = { 2,83 }, invMenuPos = { 22,83 };
 
-void SSPAdd(SSP*head,Inventory* invHead) {
+int SSPAdd(SSP* head, Inventory* invHead) {
 	int num;
 	SSP* ssp = SSPCreate();
-	memset(ssp, 0, sizeof(SSP));
-	Inventory* inv = NULL;
+	Inventory* inv = NULL, * gift = NULL;
 	breakDeliver(getStrInput("输入方案名:", ssp->planName, INFOMAX, true));
-	drawOrdMenu("方案应用类型", 2, 1, "应用于单个商品", "应用于满足条件的所有商品");
+	drawOrdMenu("方案应用类型", 2, 1, "应用于单个商品", "批量应用于满足条件的商品");
 	breakDeliver(getUIntInput("选择类型:", &num, (IntRange) { 1, 2 }, true));
 	if (num == 1) {
 		breakDeliver(inputInventoryID(invHead, &ssp->invID, &inv));
+		ssp->filter.pack = inv->prod.pack;
 	}
 	else if (num == 2) {
 		ssp->invID = 0;
 		breakDeliver(inputProductFilter(&ssp->filter));
+		breakDeliver(getDoubleInput("输入最低单价(默认不限):", &ssp->filter.unitPrice, WRANGE, false));
 	}
-	breakDeliver(getUIntInput("输入最低购买数量(默认不限):", &ssp->filter.quantity, QRANGE, false));
-	breakDeliver(getDoubleInput("输入最低购买重量(默认不限):", &ssp->filter.weight, WRANGE,false));
-	breakDeliver(getDoubleInput("输入最低单价(默认不限):", &ssp->filter.unitPrice, WRANGE, false));
+	ssp->filter.quantity = ssp->filter.weight = 0;
+	if (!ssp->invID || ssp->filter.pack == UNIT) breakDeliver(getUIntInput("输入最低购买数量(默认不限):", &ssp->filter.quantity, QRANGE, false));
+	if (!ssp->invID || ssp->filter.pack == BULK) breakDeliver(getDoubleInput("输入最低购买重量(默认不限):", &ssp->filter.weight, WRANGE, false));
 	breakDeliver(getDoubleInput("输入最低总额(默认不限):", &ssp->filter.amount, WRANGE, false));
 	breakDeliver(getDateTime("输入起始日期(默认不限):", &ssp->reqDateStart, false));
 	breakDeliver(getDateTime("输入截止日期(默认不限):", &ssp->reqDateEnd, false));
-	breakDeliver(getDoubleInput("输入折扣率:", &ssp->discount, (DoubleRange){ 0,1 },true));
+	breakDeliver(getDoubleInput("输入折扣率:", &ssp->discount, (DoubleRange) { 0, 1 }, true));
+	ssp->optGifts = invListInit(invCreate());
 	while (1) {
-		printf("输入第%d件赠品(或输入quit结束):\n", ssp->giftNum + 1);
-		breakCatch(inputGift(ssp->optGifts + ssp->giftNum, invHead)) break;
-		ssp->giftNum++;
+		printf("输入第%d种赠品(或输入quit结束)\n", ssp->optGifts->list.size + 1);
+		breakCatch(inputGift(&gift, invHead)) break;
+		listAddTail(&gift->list, &ssp->optGifts->list);
 	}
-	ssp->SSPID = head->invID++;
+	SSPIDAllocate(ssp, head);
 	listAddTail(&ssp->list, &head->list);
 }
-void SSPDelete(SSP* head) {
+int SSPDelete(SSP* head) {
 	int sspid;
 	SSP* pos;
 	breakDeliver(inputSSPID(head, &sspid, &pos));
@@ -46,11 +51,15 @@ void SSPDelete(SSP* head) {
 	SSPDel(pos);
 }
 void SSPDetails(Renderer* renderer, SSP* ssp) {
+	int giftPageStart = 1;
 	int select;
 	while (1) {
 		renderClear(renderer);
-		//showSSPDetails(renderer, UI_ORIGIN, ssp);
-		drawMenu(renderer, (Coord) { 20, 3 }, "单品优惠方案详情", 1, 1,
+		showSSPDetails(renderer, SSPDetailsPos, ssp);
+		drawListPage(renderer, SSPGiftPos, "赠品列表", drawGiftList, &ssp->optGifts->list, &giftPageStart, PageSize, GiftRectSize, NULL);
+		drawMenu(renderer, SSPDetailsMenuPos, "组合优惠方案详情", 3, 1,
+			"赠品下一页",
+			"赠品上一页",
 			"退出");
 		inputStart(renderer, INPUT_ORIGIN);
 		renderPresent(renderer);
@@ -58,6 +67,13 @@ void SSPDetails(Renderer* renderer, SSP* ssp) {
 		switch (select)
 		{
 		case 1:
+			giftPageStart -= PageSize;
+			if (giftPageStart < 1) giftPageStart = 1;
+			break;
+		case 2:
+			giftPageStart += PageSize;
+			break;
+		case 3:
 			return;
 		default:
 			break;
@@ -65,32 +81,37 @@ void SSPDetails(Renderer* renderer, SSP* ssp) {
 	}
 }
 
-void CSPAdd(CSP* head, Inventory* invHead) {
+int CSPAdd(CSP* head, Inventory* invHead) {
 	int num;
+	bool repeat;
 	CSP* csp = CSPCreate();
-	memset(csp, 0, sizeof(CSP));
-	Inventory* inv = NULL;
+	Inventory* inv = NULL, * gift = NULL;
+	int invID;
 	breakDeliver(getStrInput("输入方案名:", csp->planName, INFOMAX, true));
 	while (1) {
-		printf("组合的第%d件商品(或输入quit结束)\n", csp->comSize + 1);
-		breakCatch(inputInventoryID(invHead, csp->comIDs + csp->comSize, &inv)) break;
-		csp->comSize++;
+		printf("组合的第%d件商品(或输入quit结束)\n", csp->comInv->list.size + 1);
+		breakCatch(inputInventoryID(invHead, &invID, &inv)) break;
+		if (CSPAddInv(csp, inv) == COMINV_REPEAT) {
+			printf("不能重复添加商品\n");
+		}
 	}
 	drawOrdMenu("是否可叠加单件优惠:", 2, 1, "是", "否");
 	csp->overlaySingleSP = 1;
 	breakDeliver(getUIntInput("选择一项(默认为是):", &csp->overlaySingleSP, (IntRange) { 1, 2 }, false));
+	if (csp->overlaySingleSP == 2) csp->overlaySingleSP = 0;
 	breakDeliver(getDateTime("输入起始日期(默认不限):", &csp->reqDateStart, false));
 	breakDeliver(getDateTime("输入截止日期(默认不限):", &csp->reqDateEnd, false));
+	breakDeliver(getDoubleInput("输入折扣率:", &csp->discount, (DoubleRange) { 0, 1 }, true));
 	while (1) {
-		printf("输入第%d件赠品(或输入quit结束)\n", csp->giftNum + 1);
-		breakCatch(inputGift(csp->optGifts + csp->giftNum, invHead)) break;
-		csp->giftNum++;
+		printf("输入第%d种赠品(或输入quit结束)\n", csp->optGifts->list.size + 1);
+		breakCatch(inputGift(&gift, invHead)) break;
+		listAddTail(&gift->list, &csp->optGifts->list);
 	}
-	csp->CSPID = head->comIDs[0]++;
+	CSPIDAllocate(csp, head);
 	listAddTail(&csp->list, &head->list);
 
 }
-void CSPDelete(CSP* head) {
+int CSPDelete(CSP* head) {
 	int cspid;
 	CSP* pos;
 	breakDeliver(inputCSPID(head, &cspid, &pos));
@@ -98,11 +119,19 @@ void CSPDelete(CSP* head) {
 	CSPDel(pos);
 }
 void CSPDetails(Renderer* renderer, CSP* csp) {
+	int giftPageStart = 1, comInvPageStart = 1;
 	int select;
 	while (1) {
 		renderClear(renderer);
-		//showSSPDetails(renderer, UI_ORIGIN, ssp);
-		drawMenu(renderer, (Coord) { 20, 3 }, "单品优惠方案详情", 1, 1,
+		showCSPDetails(renderer, CSPDetailsPos, csp);
+		drawListPage(renderer, CSPComInvPos, "组合商品列表", drawComInvList, &csp->comInv->list, &comInvPageStart, PageSize, CSPComInvRectSize, NULL);
+		drawListPage(renderer, CSPGiftPos, "赠品列表", drawGiftList, &csp->optGifts->list, &giftPageStart, PageSize, GiftRectSize, NULL);
+		drawMenu(renderer, CSPDetailsMenuPos, "组合优惠方案详情", 6, 1,
+			"组合商品下一页",
+			"组合商品上一页",
+			"退出",
+			"赠品下一页",
+			"赠品上一页",
 			"退出");
 		inputStart(renderer, INPUT_ORIGIN);
 		renderPresent(renderer);
@@ -110,6 +139,22 @@ void CSPDetails(Renderer* renderer, CSP* csp) {
 		switch (select)
 		{
 		case 1:
+			comInvPageStart -= PageSize;
+			if (comInvPageStart < 1) comInvPageStart = 1;
+			break;
+		case 2:
+			comInvPageStart += PageSize;
+			break;
+		case 3:
+			return;
+		case 4:
+			giftPageStart -= PageSize;
+			if (giftPageStart < 1) giftPageStart = 1;
+			break;
+		case 5:
+			giftPageStart += PageSize;
+			break;
+		case 6:
 			return;
 		default:
 			break;
@@ -123,17 +168,15 @@ void salePlanManage(FVMO gdata) {
 	char filterOpt[2][20] = { "商品筛选","取消筛选" };
 	SSP* ssp = NULL;
 	CSP* csp = NULL;
-	Inventory* filterList=NULL,*inv=NULL;
+	Inventory* filterList = NULL, * inv = NULL;
 	int select, num;
 	Product filter;
 	while (1) {
 		renderClear(gdata.renderer);
-		drawListPage(gdata.renderer, SSPListPos, "单品销售方案列表", drawSSPList, 
-			listShowPageJump(&gdata.SSP->list, &SSPPageStart, PageSize), 
-			SSPPageStart, PageSize, (Coord) { 18, 30 });
-		drawListPage(gdata.renderer, CSPListPos, "组合销售方案列表", drawCSPList, 
-			listShowPageJump(&gdata.CSP->list, &CSPPageStart, PageSize), 
-			CSPPageStart, PageSize, (Coord) { 18, 30 });
+		drawListPage(gdata.renderer, SSPListPos, "单品销售方案列表", drawSSPList,
+			&gdata.SSP->list, &SSPPageStart, PageSize, (Coord) { 18, 30 }, NULL);
+		drawListPage(gdata.renderer, CSPListPos, "组合销售方案列表", drawCSPList,
+			&gdata.CSP->list, &CSPPageStart, PageSize, (Coord) { 18, 30 }, NULL);
 		if (inFilter) {
 			filterList = invFilterListGen(gdata.inventory, &filter);
 			drawInvPage(gdata.renderer, invListPos, "筛选信息", invShowPageJump(filterList, &invPageStart, PageSize), invPageStart, PageSize);
@@ -178,7 +221,7 @@ void salePlanManage(FVMO gdata) {
 			SSPDetails(gdata.renderer, ssp);
 			break;
 		case 4:
-			SSPAdd(gdata.SSP,gdata.inventory);
+			SSPAdd(gdata.SSP, gdata.inventory);
 			break;
 		case 5:
 			SSPDelete(gdata.SSP);
@@ -195,8 +238,9 @@ void salePlanManage(FVMO gdata) {
 		case 13:
 			breakCatch(inputCSPID(gdata.CSP, &num, &csp)) break;
 			CSPDetails(gdata.renderer, csp);
+			break;
 		case 14:
-			CSPAdd(gdata.CSP,gdata.inventory);
+			CSPAdd(gdata.CSP, gdata.inventory);
 			break;
 		case 15:
 			CSPDelete(gdata.CSP);

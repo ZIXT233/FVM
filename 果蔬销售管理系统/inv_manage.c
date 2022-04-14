@@ -14,9 +14,9 @@ void invManage(FVMO gdata) {
 		renderClear(gdata.renderer);
 		if (inFilter) {
 			filterList = invFilterListGen(gdata.inventory, &filter);
-			drawInvPage(gdata.renderer,UI_ORIGIN,"筛选信息", invShowPageJump(filterList, &pageStart, PageSize), pageStart, PageSize);
+			drawInvPage(gdata.renderer, invListPos,"筛选信息", invShowPageJump(filterList, &pageStart, PageSize), pageStart, PageSize);
 			invListClear(filterList);
-			free(filterList);
+			invDel(filterList);
 		}
 		else {
 			drawInvPage(gdata.renderer, invListPos, "库存信息", invShowPageJump(gdata.inventory, &pageStart, PageSize), pageStart, PageSize);
@@ -113,13 +113,13 @@ char variety[20][100] = { "附魔","超宇宙银河栽培","普通普通普通普通","哈哈哈哈哈
 void randomPurchase(FVMO gdata) {
 	Inventory* head = gdata.inventory;
 	Inventory* inv = creatRandInv();
-	inv->invID = head->prod.quantity++;
+	invIDAllocate(inv, head);
 	Record* rec = recordCreate();
 	rec->type = PURCHASE;
 	time(&rec->time);
 	rec->prod = inv->prod;
 	rec->invID = inv->invID;
-	rec->recID = gdata.record->time++;
+	recordIDAllocate(rec, gdata.record);
 	rec->addInfo[0] = '\0';
 	if (inv->prod.pack == UNIT) rec->prod.amount = inv->prod.quantity * inv->prod.purUPrice;
 	else if (inv->prod.pack == BULK) rec->prod.amount = inv->prod.weight * inv->prod.purUPrice;
@@ -131,8 +131,9 @@ void randomPurchase(FVMO gdata) {
 void purchase(FVMO gdata) {
 	Inventory* head = gdata.inventory;
 	Inventory* inv = invCreate();
-	inv->invRecord = recordListInit(recordCreate());
-	inv->invID = head->prod.quantity++;
+	
+	invIDAllocate(inv, head);
+	inv->prod.weight = inv->prod.quantity = 0;
 	breakCatch(inputProduct(&inv->prod)) {
 		return;
 	}
@@ -141,7 +142,7 @@ void purchase(FVMO gdata) {
 	time(&rec->time);
 	rec->prod = inv->prod;
 	rec->invID = inv->invID;
-	rec->recID = gdata.record->time++;
+	recordIDAllocate(rec, gdata.record);
 	rec->addInfo[0] = '\0';
 	if (inv->prod.pack == UNIT) rec->prod.amount = inv->prod.quantity * inv->prod.purUPrice;
 	else if (inv->prod.pack == BULK) rec->prod.amount = inv->prod.weight * inv->prod.purUPrice;
@@ -192,6 +193,7 @@ Inventory* creatRandInv() {
 	inv->prod.expiration = time(NULL) * 1.5 * rand() / RAND_MAX;
 	inv->prod.purUPrice = 300 * (double)rand() / RAND_MAX;
 	inv->prod.unitPrice = inv->prod.purUPrice + 20.0 * rand() / RAND_MAX;
+	inv->prod.weight = inv->prod.quantity = 0;
 	if (inv->prod.pack == UNIT) inv->prod.quantity = rand() * 100;
 	else inv->prod.weight = (double)10000 * rand() / RAND_MAX;
 	inv->invRecord = recordListInit(recordCreate());

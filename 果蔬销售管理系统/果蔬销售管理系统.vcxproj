@@ -142,6 +142,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="data_storage.c" />
     <ClCompile Include="homepage.c" />
     <ClCompile Include="inventory.c" />
     <ClCompile Include="inv_manage.c" />
@@ -155,6 +156,7 @@
     <ClCompile Include="UI.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="data_storage.h" />
     <ClInclude Include="homepage.h" />
     <ClInclude Include="inventory.h" />
     <ClInclude Include="inv_manage.h" />
@@ -168,6 +170,9 @@
     <ClInclude Include="sale_plan_manage.h" />
     <ClInclude Include="statistics.h" />
     <ClInclude Include="UI.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

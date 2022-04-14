@@ -6,7 +6,7 @@
 
 typedef struct tagFVMObjects {  //Store system's global data
 	Inventory* inventory;
-	Record* record;
+	Record* record,*order;
 	SingleSalePlan* SSP;
 	ComSalePlan* CSP;
 	Renderer* renderer;

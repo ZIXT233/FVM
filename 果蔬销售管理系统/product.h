@@ -32,6 +32,7 @@ static inline int productMatch(const Product* inv, const Product* filter) {
 	if (filter == NULL) return 1;
 	if (filter->kind[0] != '\0' && strcmp(filter->kind, inv->kind) != 0) return 0;
 	if (filter->variety[0] != '\0' && strcmp(filter->variety, inv->variety) != 0) return 0;
+	if (filter->quality != 0 && filter->quality != inv->quality) return 0;
 	if (filter->pack != 0 && filter->pack != inv->pack) return 0;
 	if (filter->expiration != TIME_NAN && filter->expiration < inv->expiration) return 0;
 	return 1;

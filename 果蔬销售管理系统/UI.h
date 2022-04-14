@@ -10,15 +10,20 @@ static const Coord PanelSize = { 35,180 };
 void drawRectBorder(Renderer* renderer, Coord pos, Coord const size);
 void drawMenu(Renderer* renderer, Coord pos, const char* title, int n, int firstNum, ...);
 void drawInvPage(Renderer* renderer, Coord pos, const char* title, Inventory* start, int pageStartNum, int pageSize);
-typedef void (*ListDrawer) (Renderer*, Coord, ListHead*, int);
-void drawListPage(Renderer* renderer, Coord origin, const char* title, ListDrawer drawer, ListHead* start, int pageStartNum, int pageSize, Coord rectSize);
-void drawSSPList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize);
-void drawCSPList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize);
+typedef void (*ListDrawer) (Renderer*, Coord, ListHead*, int,void*);
+void drawListPage(Renderer* renderer, Coord origin, const char* title, ListDrawer drawer, ListHead* start, int *pageStartNum, int pageSize, Coord rectSize,void* exArg);
+void drawSSPList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
+void drawCSPList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
+void drawComInvList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
+void drawPreOrderList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
+void drawGiftList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
 void drawInvList(Renderer* renderer, Coord pos, Inventory* start, int height);
 void drawRecordList(Renderer* renderer, Coord pos, Record* start, int record, int height);
 void showProductDetails(Product* prod);
 void showInvDetails(Renderer* renderer,Coord pos,Inventory* inv);
 void showRecordDetails(Renderer* renderer,Coord pos,Record* rec);
+void showSSPDetails(Renderer* renderer, Coord pos, SSP* ssp);
+void showCSPDetails(Renderer* renderer, Coord pos, CSP* csp);
 void drawCart(Renderer* renderer, Coord origin, Inventory* start, int height);
 void inputStart(Renderer* renderer, Coord inputOrigin);
 
@@ -29,10 +34,10 @@ void inputStart(Renderer* renderer, Coord inputOrigin);
 #define breakCatch(input) if(input==INPUT_BREAK)
 
 int getSelect();
-int readline(char* buf, int maxCount, FILE* stream);
+int readline(char* buf, int maxCount, FILE* stream,int *pNumberRead);
 void drawOrdMenu(const char* title, int n, int firstNum, ...);
 int inputProduct(Product* prod);
-int inputGift(Gift * gift, Inventory * invHead);
+int inputGift(Inventory ** pGift, Inventory * invHead);
 int inputProductFilter(Product* prod);
 int inputRecordFilter(Record* rec);
 int inputInventoryID(const Inventory* head, int* id, Inventory** pInv);

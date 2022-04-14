@@ -48,10 +48,13 @@
     <ClCompile Include="renderer.c">
       <Filter>源文件\objects</Filter>
     </ClCompile>
-    <ClCompile Include="sale_plan.c">
+    <ClCompile Include="sale_plan_manage.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="sale_plan_manage.c">
+    <ClCompile Include="sale_plan.c">
+      <Filter>源文件\objects</Filter>
+    </ClCompile>
+    <ClCompile Include="data_storage.c">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -95,5 +98,11 @@
     <ClInclude Include="sale_plan_manage.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="data_storage.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
 </Project>
