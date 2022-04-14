@@ -2,8 +2,8 @@
 #define SP_MANAGE_H
 
 #include"fvm_objects.h"
-void CSPDetails(Renderer* renderer, CSP* csp);
-void SSPDetails(Renderer* renderer, SSP* ssp);
+void CSPDetails(CSP* csp,FVMO gdata);
+void SSPDetails(SSP* ssp,FVMO gdata);
 void salePlanManage(FVMO gdata);
 
 #endif

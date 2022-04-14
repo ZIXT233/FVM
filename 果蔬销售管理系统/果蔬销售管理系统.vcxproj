@@ -153,6 +153,7 @@
     <ClCompile Include="sale.c" />
     <ClCompile Include="sale_plan.c" />
     <ClCompile Include="sale_plan_manage.c" />
+    <ClCompile Include="timer.c" />
     <ClCompile Include="UI.c" />
   </ItemGroup>
   <ItemGroup>
@@ -169,6 +170,7 @@
     <ClInclude Include="sale_plan.h" />
     <ClInclude Include="sale_plan_manage.h" />
     <ClInclude Include="statistics.h" />
+    <ClInclude Include="timer.h" />
     <ClInclude Include="UI.h" />
   </ItemGroup>
   <ItemGroup>

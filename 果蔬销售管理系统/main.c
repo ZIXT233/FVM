@@ -43,18 +43,22 @@ FVMO* FVMSystemInit() {
 		if (!gdata->CSP) gdata->CSP = CSPListInit(CSPCreate());
 	}
 	gdata->order = recordListInit(recordCreate());
-	gdata->renderer = rendererCreate(5000);
+	gdata->renderer = rendererCreate(10000);
+	gdata->pageStack = pageStackCreate(NULL);
+	gdata->timer = FVMTimerCreate(TIME_NAN, NULL, NULL);
 	return gdata;
 }
+HANDLE f_Mutex;
 int main(void) {
 	time_t ti;
 	time(&ti);
 	char stdinLogFilename[100];
 	sprintf_s(stdinLogFilename, 100, "stdin-%lld.log", ti);
 	fopen_s(&stdinLog, stdinLogFilename, "w");
-
+	f_Mutex = CreateMutex(NULL, FALSE, NULL);
 	srand(NULL);
 	FVMO* gdata = FVMSystemInit();
+	FVMTimerSetClockTask(gdata->timer, clockUpdateTimeBar, gdata);
 	homepage(*gdata);
 	rendererDelete(gdata->renderer);
 	storageSaveFVMO(storageDir, gdata);

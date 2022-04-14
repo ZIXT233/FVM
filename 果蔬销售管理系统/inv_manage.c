@@ -10,8 +10,10 @@ void invManage(FVMO gdata) {
 	Inventory* filterList = NULL, * inv = NULL;
 	int select, num;
 	Product filter;
+	pageStackPush(pageStackCreate("库存管理"), gdata.pageStack);
 	while (1) {
 		renderClear(gdata.renderer);
+		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
 		if (inFilter) {
 			filterList = invFilterListGen(gdata.inventory, &filter);
 			drawInvPage(gdata.renderer, invListPos,"筛选信息", invShowPageJump(filterList, &pageStart, PageSize), pageStart, PageSize);
@@ -65,7 +67,7 @@ void invManage(FVMO gdata) {
 			break;
 		case 5:
 			breakCatch(inputInventoryID(gdata.inventory, &num, &inv)) break;
-			invDetails(gdata.renderer,inv);
+			invDetails(inv,gdata);
 			break;
 		case 6:
 			num = getSelect();
@@ -98,6 +100,7 @@ void invManage(FVMO gdata) {
 			invListClear(gdata.inventory);
 			break;*/
 		case 8:
+			pageStackPop(gdata.pageStack);
 			return;
 		case 9:
 			randomPurchase(gdata);
@@ -116,7 +119,7 @@ void randomPurchase(FVMO gdata) {
 	invIDAllocate(inv, head);
 	Record* rec = recordCreate();
 	rec->type = PURCHASE;
-	time(&rec->time);
+	rec->time = FVMTimerGetFVMTime(gdata.timer);
 	rec->prod = inv->prod;
 	rec->invID = inv->invID;
 	recordIDAllocate(rec, gdata.record);
@@ -139,7 +142,7 @@ void purchase(FVMO gdata) {
 	}
 	Record* rec = recordCreate();
 	rec->type = PURCHASE;
-	time(&rec->time);
+	rec->time = FVMTimerGetFVMTime(gdata.timer);
 	rec->prod = inv->prod;
 	rec->invID = inv->invID;
 	recordIDAllocate(rec, gdata.record);
@@ -152,28 +155,30 @@ void purchase(FVMO gdata) {
 	return;
 }
 
-void invDetails(Renderer* renderer, Inventory* inv) {
+void invDetails(Inventory* inv,FVMO gdata) {
 	int invID, select;
 	struct tm date;
-
+	pageStackPush(pageStackCreate("商品详情"), gdata.pageStack);
 	while (1) {
-		renderClear(renderer);
-		showInvDetails(renderer,UI_ORIGIN,inv);
-		drawMenu(renderer, (Coord) { 20, 3 }, "商品详情", 3, 1,
+		renderClear(gdata.renderer);
+		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
+		showInvDetails(gdata.renderer,UI_ORIGIN,inv);
+		drawMenu(gdata.renderer, (Coord) { 20, 3 }, "商品详情", 3, 1,
 			"修改信息",
 			"仓管记录",
 			"退出");
-		inputStart(renderer, INPUT_ORIGIN);
-		renderPresent(renderer);
+		inputStart(gdata.renderer, INPUT_ORIGIN);
+		renderPresent(gdata.renderer);
 		select = getSelect();
 		switch (select)
 		{
 		case 1:
 			break;
 		case 2:
-			invRecordPage(renderer,inv->invRecord);
+			invRecordPage(inv->invRecord,gdata);
 			break;
 		case 3:
+			pageStackPop(gdata.pageStack);
 			return;
 		default:
 			break;
@@ -210,8 +215,10 @@ void recordPage(FVMO gdata) {
 	Record filter;
 	Inventory* inv = NULL;
 	Record* rec = NULL;
+	pageStackPush(pageStackCreate("仓管记录"), gdata.pageStack);
 	while (1) {
 		renderClear(gdata.renderer);
+		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
 		if (inFilter) {
 			filterList = recordFilterListGen(gdata.record, TIME_RECORDS, &filter);
 			drawRecordList(gdata.renderer,UI_ORIGIN, recordShowPageJump(filterList, TIME_RECORDS, &pageStart, PageSize),TIME_RECORDS, PageSize);
@@ -258,7 +265,7 @@ void recordPage(FVMO gdata) {
 			break;
 		case 4:
 			breakCatch(inputInventoryID(gdata.inventory, &num, &inv)) break;
-			invRecordPage(gdata.renderer,inv->invRecord);
+			invRecordPage(gdata.renderer,gdata);
 			break;
 		case 5:
 			while (1) {
@@ -270,7 +277,7 @@ void recordPage(FVMO gdata) {
 				}
 			}
 			if (recID < 0) break;
-			recDetails(gdata.renderer,rec);
+			recDetails(rec,gdata);
 			break;
 		case 6:
 			num = getSelect();
@@ -285,12 +292,13 @@ void recordPage(FVMO gdata) {
 		case 7:
 			break;
 		case 8:
+			pageStackPop(gdata.pageStack);
 			return;
 		}
 
 	}
 }
-void invRecordPage(Renderer* renderer,Record* invRecord) {
+void invRecordPage(Record* invRecord,FVMO gdata) {
 	int inFilter = 0;
 	int pageStart = 1, pageStartSave = 1;
 	char filterOpt[2][20] = { "记录筛选","取消筛选" };
@@ -300,18 +308,20 @@ void invRecordPage(Renderer* renderer,Record* invRecord) {
 	Record filter;
 	Inventory* inv = NULL;
 	Record* rec = NULL;
+	pageStackPush(pageStackCreate("商品仓管记录"), gdata.pageStack);
 	while (1) {
-		renderClear(renderer);
+		renderClear(gdata.renderer);
+		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
 		if (inFilter) {
 			filterList = recordFilterListGen(invRecord, INV_RECORDS, &filter);
-			drawRecordList(renderer, UI_ORIGIN, recordShowPageJump(filterList, INV_RECORDS, &pageStart, PageSize),INV_RECORDS, PageSize);
+			drawRecordList(gdata.renderer, UI_ORIGIN, recordShowPageJump(filterList, INV_RECORDS, &pageStart, PageSize),INV_RECORDS, PageSize);
 			recordListClear(filterList);
 			free(filterList);
 		}
 		else {
-			drawRecordList(renderer, UI_ORIGIN, recordShowPageJump(invRecord, INV_RECORDS, &pageStart, PageSize),INV_RECORDS, PageSize);
+			drawRecordList(gdata.renderer, UI_ORIGIN, recordShowPageJump(invRecord, INV_RECORDS, &pageStart, PageSize),INV_RECORDS, PageSize);
 		}
-		drawMenu(renderer,invMenuPos, "仓管记录", 7, 1,
+		drawMenu(gdata.renderer,invMenuPos, "仓管记录", 7, 1,
 			"上一页",
 			"下一页",
 			filterOpt[inFilter],
@@ -319,8 +329,8 @@ void invRecordPage(Renderer* renderer,Record* invRecord) {
 			"记录删除",
 			"记录更改替换",
 			"退出");
-		inputStart(renderer, INPUT_ORIGIN);
-		renderPresent(renderer);
+		inputStart(gdata.renderer, INPUT_ORIGIN);
+		renderPresent(gdata.renderer);
 		select = getSelect();
 		switch (select) {
 		case 1:
@@ -354,7 +364,7 @@ void invRecordPage(Renderer* renderer,Record* invRecord) {
 				}
 			}
 			if (recID < 0) break;
-			recDetails(renderer,rec);
+			recDetails(rec,gdata);
 			break;
 		case 5:
 			num = getSelect();
@@ -369,25 +379,29 @@ void invRecordPage(Renderer* renderer,Record* invRecord) {
 		case 6:
 			break;
 		case 7:
+			pageStackPop(gdata.pageStack);
 			return;
 		}
 
 	}
 }
 
-void recDetails(Renderer* renderer,Record* record) {
+void recDetails(Record* record,FVMO gdata) {
 	int select;
+	pageStackPush(pageStackCreate("记录详情"), gdata.pageStack);
 	while (1) {	
-		renderClear(renderer);
-		showRecordDetails(renderer,UI_ORIGIN,record);
-		drawMenu(renderer, (Coord) { 20, 3 }, "记录详情", 1, 1,
+		renderClear(gdata.renderer);
+		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
+		showRecordDetails(gdata.renderer,UI_ORIGIN,record);
+		drawMenu(gdata.renderer, (Coord) { 20, 3 }, "记录详情", 1, 1,
 			"退出");
-		inputStart(renderer, INPUT_ORIGIN);
-		renderPresent(renderer);
+		inputStart(gdata.renderer, INPUT_ORIGIN);
+		renderPresent(gdata.renderer);
 		select = getSelect();
 		switch (select)
 		{
 		case 1:
+			pageStackPop(gdata.pageStack);
 			return;
 		default:
 			break;

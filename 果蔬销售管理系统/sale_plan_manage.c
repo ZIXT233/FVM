@@ -50,19 +50,21 @@ int SSPDelete(SSP* head) {
 	listRemove(&pos->list);
 	SSPDel(pos);
 }
-void SSPDetails(Renderer* renderer, SSP* ssp) {
+void SSPDetails(SSP* ssp,FVMO gdata) {
 	int giftPageStart = 1;
 	int select;
+	pageStackPush(pageStackCreate("单品销售方案详情"), gdata.pageStack);
 	while (1) {
-		renderClear(renderer);
-		showSSPDetails(renderer, SSPDetailsPos, ssp);
-		drawListPage(renderer, SSPGiftPos, "赠品列表", drawGiftList, &ssp->optGifts->list, &giftPageStart, PageSize, GiftRectSize, NULL);
-		drawMenu(renderer, SSPDetailsMenuPos, "组合优惠方案详情", 3, 1,
+		renderClear(gdata.renderer);
+		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
+		showSSPDetails(gdata.renderer, SSPDetailsPos, ssp);
+		drawListPage(gdata.renderer, SSPGiftPos, "赠品列表", drawGiftList, &ssp->optGifts->list, &giftPageStart, PageSize, GiftRectSize, NULL);
+		drawMenu(gdata.renderer, SSPDetailsMenuPos, "组合优惠方案详情", 3, 1,
 			"赠品下一页",
 			"赠品上一页",
 			"退出");
-		inputStart(renderer, INPUT_ORIGIN);
-		renderPresent(renderer);
+		inputStart(gdata.renderer, INPUT_ORIGIN);
+		renderPresent(gdata.renderer);
 		select = getSelect();
 		switch (select)
 		{
@@ -74,6 +76,7 @@ void SSPDetails(Renderer* renderer, SSP* ssp) {
 			giftPageStart += PageSize;
 			break;
 		case 3:
+			pageStackPop(gdata.pageStack);
 			return;
 		default:
 			break;
@@ -118,23 +121,25 @@ int CSPDelete(CSP* head) {
 	listRemove(&pos->list);
 	CSPDel(pos);
 }
-void CSPDetails(Renderer* renderer, CSP* csp) {
+void CSPDetails(CSP* csp,FVMO gdata) {
 	int giftPageStart = 1, comInvPageStart = 1;
 	int select;
+	pageStackPush(pageStackCreate("组合销售方案详情"), gdata.pageStack);
 	while (1) {
-		renderClear(renderer);
-		showCSPDetails(renderer, CSPDetailsPos, csp);
-		drawListPage(renderer, CSPComInvPos, "组合商品列表", drawComInvList, &csp->comInv->list, &comInvPageStart, PageSize, CSPComInvRectSize, NULL);
-		drawListPage(renderer, CSPGiftPos, "赠品列表", drawGiftList, &csp->optGifts->list, &giftPageStart, PageSize, GiftRectSize, NULL);
-		drawMenu(renderer, CSPDetailsMenuPos, "组合优惠方案详情", 6, 1,
+		renderClear(gdata.renderer);
+		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
+		showCSPDetails(gdata.renderer, CSPDetailsPos, csp);
+		drawListPage(gdata.renderer, CSPComInvPos, "组合商品列表", drawComInvList, &csp->comInv->list, &comInvPageStart, PageSize, CSPComInvRectSize, NULL);
+		drawListPage(gdata.renderer, CSPGiftPos, "赠品列表", drawGiftList, &csp->optGifts->list, &giftPageStart, PageSize, GiftRectSize, NULL);
+		drawMenu(gdata.renderer, CSPDetailsMenuPos, "组合优惠方案详情", 6, 1,
 			"组合商品下一页",
 			"组合商品上一页",
 			"退出",
 			"赠品下一页",
 			"赠品上一页",
 			"退出");
-		inputStart(renderer, INPUT_ORIGIN);
-		renderPresent(renderer);
+		inputStart(gdata.renderer, INPUT_ORIGIN);
+		renderPresent(gdata.renderer);
 		select = getSelect();
 		switch (select)
 		{
@@ -155,6 +160,7 @@ void CSPDetails(Renderer* renderer, CSP* csp) {
 			giftPageStart += PageSize;
 			break;
 		case 6:
+			pageStackPop(gdata.pageStack);
 			return;
 		default:
 			break;
@@ -171,8 +177,10 @@ void salePlanManage(FVMO gdata) {
 	Inventory* filterList = NULL, * inv = NULL;
 	int select, num;
 	Product filter;
+	pageStackPush(pageStackCreate("销售方案管理"), gdata.pageStack);
 	while (1) {
 		renderClear(gdata.renderer);
+		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
 		drawListPage(gdata.renderer, SSPListPos, "单品销售方案列表", drawSSPList,
 			&gdata.SSP->list, &SSPPageStart, PageSize, (Coord) { 18, 30 }, NULL);
 		drawListPage(gdata.renderer, CSPListPos, "组合销售方案列表", drawCSPList,
@@ -218,7 +226,7 @@ void salePlanManage(FVMO gdata) {
 			break;
 		case 3:
 			breakCatch(inputSSPID(gdata.SSP, &num, &ssp)) break;
-			SSPDetails(gdata.renderer, ssp);
+			SSPDetails(ssp,gdata);
 			break;
 		case 4:
 			SSPAdd(gdata.SSP, gdata.inventory);
@@ -227,6 +235,7 @@ void salePlanManage(FVMO gdata) {
 			SSPDelete(gdata.SSP);
 			break;
 		case 6:
+			pageStackPop(gdata.pageStack);
 			return;
 		case 11:
 			CSPPageStart -= PageSize;
@@ -237,7 +246,7 @@ void salePlanManage(FVMO gdata) {
 			break;
 		case 13:
 			breakCatch(inputCSPID(gdata.CSP, &num, &csp)) break;
-			CSPDetails(gdata.renderer, csp);
+			CSPDetails(csp,gdata);
 			break;
 		case 14:
 			CSPAdd(gdata.CSP, gdata.inventory);

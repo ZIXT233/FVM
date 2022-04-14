@@ -4,11 +4,12 @@
 #include"fvm_objects.h"
 #include"renderer.h"
 
-static const Coord UI_ORIGIN = { 1,1 }, INPUT_ORIGIN = { 37,1 }, NAN_COORD = { -1,-1 };
-static const Coord PanelSize = { 35,180 };
+static const Coord UI_ORIGIN = { 1,1 }, INPUT_ORIGIN = { 35,1 }, NAN_COORD = { -1,-1 }, STATUS_ORIGIN = { 1,1 };
+static const Coord PanelSize = { 35,185 };
 
 void drawRectBorder(Renderer* renderer, Coord pos, Coord const size);
 void drawMenu(Renderer* renderer, Coord pos, const char* title, int n, int firstNum, ...);
+void drawStatusBar(Renderer* renderer, Coord origin, FVMO gdata);
 void drawInvPage(Renderer* renderer, Coord pos, const char* title, Inventory* start, int pageStartNum, int pageSize);
 typedef void (*ListDrawer) (Renderer*, Coord, ListHead*, int,void*);
 void drawListPage(Renderer* renderer, Coord origin, const char* title, ListDrawer drawer, ListHead* start, int *pageStartNum, int pageSize, Coord rectSize,void* exArg);
@@ -25,6 +26,8 @@ void showRecordDetails(Renderer* renderer,Coord pos,Record* rec);
 void showSSPDetails(Renderer* renderer, Coord pos, SSP* ssp);
 void showCSPDetails(Renderer* renderer, Coord pos, CSP* csp);
 void drawCart(Renderer* renderer, Coord origin, Inventory* start, int height);
+void drawTimeBar(Renderer* renderer,FVMTimer* timer);
+void clockUpdateTimeBar(void* arg);
 void inputStart(Renderer* renderer, Coord inputOrigin);
 
 #define INPUT_BREAK -2

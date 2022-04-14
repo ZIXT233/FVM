@@ -1,8 +1,8 @@
 #ifndef PRODUCT_H
 #define PRODUCT_H
-#include<time.h>
+#include"timer.h"
 #define INFOMAX 256
-#define TIME_NAN (0x3f3f3f3f3f3f3f3f)
+
 typedef struct tagProduct {
 	//Product attributes
 	char kind[INFOMAX];

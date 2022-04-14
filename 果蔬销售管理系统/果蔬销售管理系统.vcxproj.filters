@@ -57,6 +57,9 @@
     <ClCompile Include="data_storage.c">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="timer.c">
+      <Filter>源文件\objects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="sale.h">
@@ -100,6 +103,9 @@
     </ClInclude>
     <ClInclude Include="data_storage.h">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="timer.h">
+      <Filter>头文件\objects</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

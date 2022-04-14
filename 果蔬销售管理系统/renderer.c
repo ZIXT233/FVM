@@ -91,7 +91,6 @@ void _cls()
 
 void renderClear(Renderer* renderer) {
 	renderer->offset = renderer->buffer;
-	setCursorPos(renderer,(Coord) { 1, 1 });
 }
 
 void renderPresent(Renderer* renderer) {

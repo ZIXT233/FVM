@@ -5,10 +5,10 @@
 void invManage(FVMO gdata);
 void purchase(FVMO gdata);
 Inventory* creatRandInv();
-void invDetails(Renderer* renderer, Inventory* inv);
+void invDetails(Inventory* inv,FVMO gdata);
 void recordPage(FVMO gdata);
-void invRecordPage(Record* invRecord);
-void recDetails(Renderer* renderer, Record* record);
+void invRecordPage(Record* invRecord,FVMO gdata);
+void recDetails(Record* record,FVMO gdata);
 void randomPurchase(FVMO gdata);
 
 static const Coord invListPos = { 2,3 }, invMenuPos = { 21,3 };

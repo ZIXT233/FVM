@@ -353,16 +353,54 @@ void drawGiftList(Renderer* renderer, Coord origin, ListHead* entry, int pageSiz
 	setCursorPos(renderer, origin);
 }
 
+static Renderer* timeUpdateRenderer=NULL;
+void clockUpdateTimeBar(void* arg) {
+	if (!timeUpdateRenderer) timeUpdateRenderer = rendererCreate(500);
+	FVMO* gdata = (FVMO*)arg;
+	drawTimeBar(timeUpdateRenderer, gdata->timer);
+	fwrite(timeUpdateRenderer->buffer, 1, timeUpdateRenderer->offset-timeUpdateRenderer->buffer, stdout);
+	renderClear(timeUpdateRenderer);
+}
+void drawTimeBar(Renderer* renderer,FVMTimer* timer) {
+	time_t ti;
+	struct tm sti;
+	ti = FVMTimerGetFVMTime(timer);
+	localtime_s(&sti, &ti);
+	renderPrintf(renderer,CSI "104;93m" CSI "s" CSI "?25l");
+	renderPrintf(renderer,CSI "%d;%dH",STATUS_ORIGIN.x,STATUS_ORIGIN.y+4);
+	renderPrintf(renderer,"%02d:%02d:%02d", sti.tm_hour, sti.tm_min, sti.tm_sec);
+	renderPrintf(renderer, CSI "%d;%dH", STATUS_ORIGIN.x, PanelSize.y - 10);
+	renderPrintf(renderer, "%d/%d/%d", sti.tm_year+1900, sti.tm_mon+1, sti.tm_mday);
+	renderPrintf(renderer,CSI "u" CSI "?25h" CSI "0m");
+}
+void drawStatusBar(Renderer* renderer, Coord origin,  FVMO gdata) {
+	setCursorPos(renderer, origin);
+	renderPrintf(renderer, CSI "104;93m");
+	for (int i = 0; i < PanelSize.y; i++) {
+		renderPrintf(renderer," ");
+	}
+	Coord pageStatusPos = origin;
+	pageStatusPos.y += 15;
+	setCursorPos(renderer,pageStatusPos);
+	listForEachEntry(PageStack, pos, &gdata.pageStack->list, list) {
+		renderPrintf(renderer, "/");
+		renderPrintf(renderer, "%s", pos->pageName);
+	}
+	drawTimeBar(renderer,gdata.timer);
+	renderPrintf(renderer, CSI "0m");
+}
+
 void inputStart(Renderer* renderer, Coord inputOrigin) {
+
 	setCursorPos(renderer, inputOrigin);
 	renderPrintf(renderer, ESC "(0");
-	for (int i = 0; i <= PanelSize.y; i++) {
+	for (int i = 0; i < PanelSize.y; i++) {
 		renderPrintf(renderer, "q");
 	}
 	Coord bottom = inputOrigin;
 	bottom.x += 10;
 	setCursorPos(renderer, bottom);
-	for (int i = 0; i <= PanelSize.y; i++) {
+	for (int i = 0; i < PanelSize.y; i++) {
 		renderPrintf(renderer, "q");
 	}
 	renderPrintf(renderer, ESC "(B");
@@ -595,7 +633,7 @@ int inputProduct(Product* prod) {
 	return INPUT_SUCCESS;
 }
 int inputGift(Inventory** pGift, Inventory* invHead) {
-	Inventory* inv = NULL,*cp=NULL;
+	Inventory* inv = NULL, * cp = NULL;
 	int invID;
 	breakDeliver(inputInventoryID(invHead, &invID, &inv));
 	cp = invCopyCreate(inv);

@@ -195,7 +195,7 @@ int settleProc(FVMO gdata, Record* preOrder) {
 	Inventory* inv = NULL;
 	Record* rec = NULL;
 	time_t ti;
-	time(&ti);
+	ti = FVMTimerGetFVMTime(gdata.timer);
 	listForEachEntrySafe(Record, pos, &preOrder->timeList, timeList) {
 		pos->time = ti;
 		if(pos->prod.pack==BULK)pos->prod.amount = pos->discount * pos->prod.unitPrice * pos->prod.weight;
@@ -228,9 +228,10 @@ int settleProc(FVMO gdata, Record* preOrder) {
 int settlement(FVMO gdata, Record* preOrder) {
 	int orderPageStart = 1, optCSPPageStart = 1;
 	int select, num;
-
+	pageStackPush(pageStackCreate("订单结算"), gdata.pageStack);
 	while (1) {
 		renderClear(gdata.renderer);
+		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
 		drawListPage(gdata.renderer, PreOrderPos, "最终订单", drawPreOrderList, &preOrder->timeList, &orderPageStart, PageSize, PreOrderRectSize, &gdata);
 		drawMenu(gdata.renderer, PreOrderMenu, "订单结算", 4, 1,
 			"上一页",
@@ -251,8 +252,10 @@ int settlement(FVMO gdata, Record* preOrder) {
 			break;
 		case 3:
 			settleProc(gdata, preOrder);
+			pageStackPop(gdata.pageStack);
 			return SETTLE_SUCCESS;
 		case 4:
+			pageStackPop(gdata.pageStack);
 			return SETTLE_BREAK;
 		default:
 			break;
@@ -310,6 +313,7 @@ int giftSelect(FVMO gdata, Record* preOrder) {
 	Inventory* gift = NULL;
 	bool repeat;
 	sspidSize = cspidSize = sspidCur = cspidCur = 0;
+
 	listForEachEntry(Record, pos, &preOrder->timeList, timeList) {
 		if (pos->SSPID) {
 			repeat = false;
@@ -336,9 +340,10 @@ int giftSelect(FVMO gdata, Record* preOrder) {
 			}
 		}
 	}
-
+	pageStackPush(pageStackCreate("赠品选择"), gdata.pageStack);
 	while (1) {
 		renderClear(gdata.renderer);
+		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
 		drawListPage(gdata.renderer, PreOrderPos, "订单", drawPreOrderList, &preOrder->timeList, &orderPageStart, PageSize, PreOrderRectSize, &gdata);
 
 		if (sspidCur < sspidSize) {
@@ -417,6 +422,7 @@ int giftSelect(FVMO gdata, Record* preOrder) {
 			break;
 		case 5:
 			if (settlement(gdata, preOrder) == SETTLE_SUCCESS) {
+				pageStackPop(gdata.pageStack);
 				return SETTLE_SUCCESS;
 			}
 			else {
@@ -429,6 +435,7 @@ int giftSelect(FVMO gdata, Record* preOrder) {
 					recordDel(pos);
 				}
 			}
+			pageStackPop(gdata.pageStack);
 			return SETTLE_BREAK;
 		case 11:
 			giftPageStart -= PageSize;
@@ -461,9 +468,10 @@ int salePlanSelect(FVMO gdata, Inventory* cart) {
 		listAddTail(&rec->timeList, &preOrder->timeList);
 	}
 	SSPAutoApplicate(gdata.SSP, preOrder);
-
+	pageStackPush(pageStackCreate("销售方案选择"), gdata.pageStack);
 	while (1) {
 		renderClear(gdata.renderer);
+		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
 		drawListPage(gdata.renderer, PreOrderPos, "订单", drawPreOrderList, &preOrder->timeList, &orderPageStart, PageSize, PreOrderRectSize, &gdata);
 		if (optCSP) {
 			CSPListClear(optCSP);
@@ -509,6 +517,7 @@ int salePlanSelect(FVMO gdata, Inventory* cart) {
 			break;
 		case 7:
 			if (giftSelect(gdata, preOrder) == SETTLE_SUCCESS) {
+				pageStackPop(gdata.pageStack);
 				return SETTLE_SUCCESS;
 			} else {
 				break;
@@ -521,6 +530,7 @@ int salePlanSelect(FVMO gdata, Inventory* cart) {
 			}
 			recordListClear(preOrder);
 			free(preOrder);
+			pageStackPop(gdata.pageStack);
 			return SETTLE_BREAK;
 		case 11:
 			optCSPPageStart -= PageSize;
@@ -531,7 +541,7 @@ int salePlanSelect(FVMO gdata, Inventory* cart) {
 			break;
 		case 13:
 			breakCatch(inputCSPID(gdata.CSP, &num, &csp)) break;
-			CSPDetails(gdata.renderer, csp);
+			CSPDetails(csp,gdata);
 		default:
 			break;
 		}
@@ -550,8 +560,10 @@ void sale(FVMO gdata) {
 	Inventory* filterList = NULL, * inv = NULL, * cart = invListInit(invCreate());
 	int select, num;
 	Product filter;
+	pageStackPush(pageStackCreate("销售系统"), gdata.pageStack);
 	while (1) {
 		renderClear(gdata.renderer);
+		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
 		drawInvPage(gdata.renderer, cartPos, "购物车", invShowPageJump(cart, &cartPageStart, PageSize), cartPageStart, PageSize);
 		drawMenu(gdata.renderer, cartMenuPos, "购物车", 5, 11,
 			"上一页",
@@ -604,7 +616,7 @@ void sale(FVMO gdata) {
 			break;
 		case 4:
 			breakCatch(inputInventoryID(gdata.inventory, &num, &inv)) break;
-			invDetails(gdata.renderer, inv);
+			invDetails(inv,gdata);
 			break;
 		case 5:
 			cartAdd(cart, gdata.inventory);
@@ -617,6 +629,7 @@ void sale(FVMO gdata) {
 		case 7:
 			invListClear(cart);
 			invDel(cart);
+			pageStackPop(gdata.pageStack);
 			return;
 		case 11:
 			cartPageStart -= PageSize;
