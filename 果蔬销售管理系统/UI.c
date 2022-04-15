@@ -105,23 +105,36 @@ void drawInvPage(Renderer* renderer, Coord origin, const char* title, Inventory*
 	origin.y++;
 }
 void drawInvList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg) {
-	Inventory* start = invEntry(entry);
-	coordPrintf(renderer, origin, "种类\t\t\t品种\t\t销售单价\tID\t    数量");
-	origin.x++;
+	Inventory* start = listEntry(entry, Inventory, list);
+	Coord cur = origin;
+	CellData cellName[5] = { {drawCellStr,14,0,"种类"} ,{drawCellStr,14,0,"品种"},{drawCellStr,14,0,"销售单价"},
+		{drawCellStr,14,0,"ID"},{drawCellStr,14,0,"数量"} };
+	drawColorBar(renderer, cur, 238,232,213, 76);
+	drawListItem(renderer, cur, cellName, 5);
+	cur.x++;
+	CellDataDrawer packDrawer = NULL;
 	int n = 0;
-	char kind[INFOMAX], var[INFOMAX];
+	void* qw=NULL;
 
 	listForEachEntry(Inventory, pos, &(start->list), list) {
 		if (n == pageSize) break;
-		strMakeLen(kind, pos->prod.kind, 14);
-		strMakeLen(var, pos->prod.variety, 12);
 		if (pos->prod.pack == BULK) {
-			coordPrintf(renderer, origin, "%s\t%s\t%8.2lf\t%d\t%8.2lf", kind, var, pos->prod.unitPrice, pos->invID, pos->prod.weight);
+			qw = &pos->prod.weight;
+			packDrawer = drawCellBULK;
 		}
 		else if (pos->prod.pack == UNIT) {
-			coordPrintf(renderer, origin, "%s\t%s\t%8.2lf\t%d\t%8d", kind, var, pos->prod.unitPrice, pos->invID, pos->prod.quantity);
+			qw = &pos->prod.quantity;
+			packDrawer = drawCellUNIT;
 		}
-		origin.x++;
+		CellData cellData[5] = { {drawCellStr,14,0,pos->prod.kind} ,
+									{drawCellStr,14,0,pos->prod.variety},
+									{drawCellDouble,14,1,&pos->prod.unitPrice},
+									{drawCellInt,14,0,&pos->invID},
+									{packDrawer,14,0,qw}};
+		if (n & 1)drawColorBar(renderer, cur, 238,232,213, 76);
+		else resetBackgroundColor(renderer);
+		drawListItem(renderer, cur, cellData, 5);
+		cur.x++;
 		n++;
 	}
 }
@@ -205,32 +218,44 @@ void drawListPage(Renderer* renderer, Coord origin, const char* title, ListDrawe
 }
 void drawSSPList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg) {
 	SSP* start = listEntry(entry, SSP, list);
-	coordPrintf(renderer, origin, "方案名\t\t方案ID");
-	origin.x++;
-	int n = 0;
-	char name[30];
+	Coord cur = origin;
+
+	CellData cellName[2] = { {drawCellStr,12,0,"方案名"} ,{drawCellStr,12,0,"方案ID"} };
+	drawColorBar(renderer, cur, 238,232,213,31);
+	drawListItem(renderer, cur, cellName, 2);
+	cur.x++;
+	int n = 0; 
 
 	listForEachEntry(SSP, pos, &(start->list), list) {
 		if (n == pageSize) break;
-		strMakeLen(name, pos->planName, 20);
-		coordPrintf(renderer, origin, "%s\t%d", name, pos->SSPID);
-		origin.x++;
+		CellData cellData[2] = { {drawCellStr,12,0,pos->planName} ,
+									{drawCellInt,12,0,&pos->SSPID} };
+		if (n & 1)drawColorBar(renderer, cur, 238,232,213, 31);
+		else resetBackgroundColor(renderer);
+		drawListItem(renderer, cur, cellData, 2);
+		cur.x++;
 		n++;
 	}
 
 }
 void drawCSPList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg) {
 	CSP* start = listEntry(entry, CSP, list);
-	coordPrintf(renderer, origin, "方案名\t\t方案ID");
-	origin.x++;
+	Coord cur = origin;
+
+	CellData cellName[2] = { {drawCellStr,12,0,"方案名"} ,{drawCellStr,12,0,"方案ID"} };
+	drawColorBar(renderer, cur, 238,232,213, 31);
+	drawListItem(renderer, cur, cellName, 2);
+	cur.x++;
 	int n = 0;
-	char name[INFOMAX];
 
 	listForEachEntry(CSP, pos, &(start->list), list) {
 		if (n == pageSize) break;
-		strMakeLen(name, pos->planName, 20);
-		coordPrintf(renderer, origin, "%s\t%d", name, pos->CSPID);
-		origin.x++;
+		CellData cellData[2] = { {drawCellStr,12,0,pos->planName} ,
+									{drawCellInt,12,0,&pos->CSPID} };
+		if (n & 1)drawColorBar(renderer, cur, 238,232,213, 31);
+		else resetBackgroundColor(renderer);
+		drawListItem(renderer, cur, cellData, 2);
+		cur.x++;
 		n++;
 	}
 }
