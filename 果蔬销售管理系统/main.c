@@ -11,8 +11,11 @@ FILE* stdinLog;
 void setConsoleEnv() {
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	DWORD outMode;
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	GetConsoleMode(hStdout, &outMode);
 	SetConsoleMode(hStdout, (outMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING));
+	HWND hwnd = GetForegroundWindow();
+	ShowWindow(hwnd, SW_MAXIMIZE);
 }
 
 static const char storageDir[20] = "FVMData";
@@ -42,8 +45,9 @@ FVMO* FVMSystemInit() {
 		if (!gdata->SSP) gdata->SSP = SSPListInit(SSPCreate());
 		if (!gdata->CSP) gdata->CSP = CSPListInit(CSPCreate());
 	}
+	gdata->finance = financeInit(financeCreate(),100000);
 	gdata->order = recordListInit(recordCreate());
-	gdata->renderer = rendererCreate(10000);
+	gdata->renderer = rendererCreate(50000);
 	gdata->pageStack = pageStackCreate(NULL);
 	gdata->timer = FVMTimerCreate(TIME_NAN, NULL, NULL);
 	return gdata;

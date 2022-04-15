@@ -9,6 +9,7 @@ typedef struct tagCoord {
 	int x;
 	int y;
 }Coord;
+Coord coordAdd(Coord, Coord);
 
 Renderer* rendererCreate(int bufferSize);
 void rendererDelete(Renderer* renderer);

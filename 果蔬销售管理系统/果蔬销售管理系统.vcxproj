@@ -143,6 +143,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="data_storage.c" />
+    <ClCompile Include="finance.c" />
     <ClCompile Include="homepage.c" />
     <ClCompile Include="inventory.c" />
     <ClCompile Include="inv_manage.c" />
@@ -153,11 +154,13 @@
     <ClCompile Include="sale.c" />
     <ClCompile Include="sale_plan.c" />
     <ClCompile Include="sale_plan_manage.c" />
+    <ClCompile Include="statistic.c" />
     <ClCompile Include="timer.c" />
     <ClCompile Include="UI.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="data_storage.h" />
+    <ClInclude Include="finance.h" />
     <ClInclude Include="homepage.h" />
     <ClInclude Include="inventory.h" />
     <ClInclude Include="inv_manage.h" />

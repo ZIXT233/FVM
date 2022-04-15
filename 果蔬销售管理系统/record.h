@@ -3,12 +3,13 @@
 
 #include"list.h"
 #include"product.h"
+#include"finance.h"
 #include<stdlib.h>
 
 
 typedef struct tagRecord {
 	Product prod;
-	enum RecordType { PURCHASE=1, SALE, UPDATE, GIFT } type;
+	enum RecordType { PURCHASE=1, SALE, UPDATE, GIFT, DESTROY} type;
 	int invID, recID;
 	int SSPID, CSPID;
 	int recIDCnt;
@@ -19,8 +20,10 @@ typedef struct tagRecord {
 	ListHead IRList;  //records of same inventory
 	time_t lastTime;  //used as filter
 }Record;
+static const int recordTypeProdDirect[6] = { 0,1,-1,1,-1,-1 };
+static const int recordTypeFinanceDirect[6] = { 0,-1,1,0,1,0 };
 
-
+static const int RecordTypeNum = 5;
 static const int RecordIDBase = 0000;
 Record* recordCreate();
 void recordDel(Record* pos); //Îö¹¹
@@ -35,5 +38,8 @@ int recordMatch(const Record* rec, const Record* filter);
 #define INV_RECORDS 1
 Record* recordFilterListGen(const Record* head, int type, const Record* filter);
 Record* recordShowPageJump(const Record* head, int type, int* pageStart, const int pageSize);
+void recordStatsQuantity(const Record* head, int type, const Record* filter, int quantityTable[]);
+void recordStatsWeight(const Record* head, int type, const Record* filter, double weightTable[]);
+Finance recordStatsFinance(const Record* head, int type, const Record* filter, double startUpCapital);
 
 #endif // !RECORD_H

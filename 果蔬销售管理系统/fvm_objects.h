@@ -1,10 +1,13 @@
 #ifndef FVMOBJECTS_H
 #define FVMOBJECTS_H
 #include<stdlib.h>
+#include<stdint.h>
 #include"inventory.h"
 #include"sale_plan.h"
 #include"renderer.h"
 #include"timer.h"
+#include"finance.h"
+
 
 #define PAGE_NAME_MAX 256
 typedef struct tagPageStack {
@@ -42,6 +45,8 @@ typedef struct tagFVMObjects {  //Store system's global data
 	Renderer* renderer;
 	FVMTimer* timer;
 	PageStack* pageStack;
+	Finance* finance;
+	uint8_t passwdSha256[32];
 }FVMObjects, FVMO;
 
 

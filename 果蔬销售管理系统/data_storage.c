@@ -35,6 +35,8 @@ int storageStat(char storageDir[]) {
 void storageCreate(char storageDir[]) {
 	_mkdir(storageDir);
 }
+
+
 FVMO* storageLoadFVMO(char storageDir[]) {  //读取,无文件则置空
 	FVMO* gdata = (FVMO*)malloc(sizeof(FVMO));
 	char filepath[FILENAME_MAX * 2], * pathcur;
@@ -42,12 +44,17 @@ FVMO* storageLoadFVMO(char storageDir[]) {  //读取,无文件则置空
 	pathcur = filepath + strlen(filepath);
 	*(pathcur++) = '/';
 	int nameLimit = sizeof(filepath) - (pathcur - filepath);
+
+	strcpy_s(pathcur, nameLimit, CONFIG_FILENAME);
+	//storageLoadConfig(filepath, gdata);
+	
 	strcpy_s(pathcur, nameLimit, INVENTORY_FILENAME);
 	gdata->inventory = storageLoadInventory(filepath);
 	strcpy_s(pathcur, nameLimit, RECORD_FILENAME);
 	gdata->record = storageLoadRecord(filepath,gdata->inventory);
 	strcpy_s(pathcur, nameLimit, SALE_PLAN_FILENAME);
 	storageLoadSalePlan(filepath, &gdata->SSP, &gdata->CSP);
+	
 	return gdata;
 }
 
@@ -64,6 +71,36 @@ int storageSaveFVMO(char storageDir[],FVMO* gdata) {
 	storageSaveRecord(filepath, gdata->record);
 	strcpy_s(pathcur, nameLimit, SALE_PLAN_FILENAME);
 	storageSaveSalePlan(filepath, gdata->SSP, gdata->CSP);
+	return 0;
+}
+
+int storageLoadConfig(char filename[], FVMO* fvmo) {
+	FILE* cfgFile;
+	fopen_s(&cfgFile, filename, "rb");
+	if (!cfgFile) return -1;
+
+	FVMTimer timeData;
+	if (!fread(&timeData, sizeof(FVMTimer), 1, cfgFile)) return -1;
+	fvmo->timer = FVMTimerCreate(timeData.FVMTime, NULL, NULL);
+
+	fvmo->finance = (Finance*)malloc(sizeof(Finance));
+	if (!fread(fvmo->finance, sizeof(FVMTimer), 1, cfgFile)) {
+		free(fvmo->finance);
+		return -1;
+	}
+	if (!fread(fvmo->passwdSha256, sizeof(fvmo->passwdSha256), 1, cfgFile)) return -1;
+	fclose(cfgFile);
+	return 0;
+}
+int storageSaveConfig(char filename[], FVMO* fvmo) {
+	FILE* cfgFile;
+	fopen_s(&cfgFile, filename, "rb");
+	if (!cfgFile) return -1;
+
+	fwrite(fvmo->timer, sizeof(FVMTimer), 1, cfgFile);
+	fwrite(fvmo->finance, sizeof(Finance), 1, cfgFile);
+	fwrite(fvmo->passwdSha256, sizeof(fvmo->passwdSha256), 1, cfgFile);
+	fclose(cfgFile);
 	return 0;
 }
 Inventory* storageLoadInventory(char filename[]) {

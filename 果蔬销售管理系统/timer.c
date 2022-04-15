@@ -9,13 +9,15 @@ FVMTimer* FVMTimerCreate(time_t FVMTime, FVMClockTask clockTask, void* clockTask
 	timer->clockOn = true;
 	timer->clockTask = clockTask;
 	timer->clockTaskArgs = clockTaskArgs;
-	timer->clockThreadHANDLE=_beginthreadex(NULL, 0, FVMTimerClock, timer, 0, &timer->clockThreadID);
+	timer->clockThreadHANDLE = _beginthreadex(NULL, 0, FVMTimerClock, timer, 0, &timer->clockThreadID);
 	return timer;
 }
 unsigned __stdcall FVMTimerClock(LPVOID lpParam) {
 	FVMTimer* timer = (FVMTimer*)lpParam;
 	time_t ti, tiOld;
 	unsigned clockTaskID;
+	HANDLE clockTaskHANDLE = NULL;
+	DWORD taskSt=WAIT_OBJECT_0;
 	int queryCnt = 0, blocktime = BLOCKTIME_INIT, mul = 1;
 	time(&ti);
 	tiOld = ti;
@@ -34,9 +36,12 @@ unsigned __stdcall FVMTimerClock(LPVOID lpParam) {
 		WaitForSingleObject(timer->timeMutex, INFINITE);
 		timer->OSTime = ti;
 		if (timer->FVMTime != TIME_NAN) timer->FVMTime = ti + timer->FVMTimeOffset;
-		if (timer->clockTask) _beginthreadex(NULL, 0, timer->clockTask, timer->clockTaskArgs, 0, &clockTaskID);
+		if (timer->clockTask) {
+			if (clockTaskHANDLE) taskSt = WaitForSingleObject(clockTaskHANDLE, 0);
+			if (taskSt == WAIT_OBJECT_0) clockTaskHANDLE = _beginthreadex(NULL, 0, timer->clockTask, timer->clockTaskArgs, 0, &clockTaskID);
+		}
 		ReleaseMutex(timer->timeMutex);
-		
+
 		if (queryCnt == 1) blocktime -= mul, mul <<= 1;
 		else {
 			mul = 1;
@@ -57,7 +62,7 @@ time_t FVMTimerGetOSTime(FVMTimer* timer) {
 time_t FVMTimerGetFVMTime(FVMTimer* timer) {
 	time_t FVMTime;
 	WaitForSingleObject(timer->timeMutex, INFINITE);
-	FVMTime = timer->OSTime+timer->FVMTimeOffset;
+	FVMTime = timer->OSTime + timer->FVMTimeOffset;
 	ReleaseMutex(timer->timeMutex);
 	return FVMTime;
 }
@@ -69,7 +74,7 @@ void FVMTimerSetFVMTime(FVMTimer* timer, time_t fvmtime) {
 	else timer->FVMTimeOffset = 0;
 	ReleaseMutex(timer->timeMutex);
 }
-void FVMTimerSetClockTask(FVMTimer* timer,FVMClockTask clockTask, void* clockTaskArgs) {
+void FVMTimerSetClockTask(FVMTimer* timer, FVMClockTask clockTask, void* clockTaskArgs) {
 	WaitForSingleObject(timer->timeMutex, INFINITE);
 	timer->clockTask = clockTask;
 	timer->clockTaskArgs = clockTaskArgs;
@@ -79,7 +84,7 @@ void FVMTimerSetClockTask(FVMTimer* timer,FVMClockTask clockTask, void* clockTas
 void FVMTimeClockOn(FVMTimer* timer) {
 	if (timer->clockOn) return;
 	timer->clockOn = true;
-	timer->clockThreadHANDLE=_beginthreadex(NULL, 0, FVMTimerClock, timer, 0, &timer->clockThreadID);
+	timer->clockThreadHANDLE = _beginthreadex(NULL, 0, FVMTimerClock, timer, 0, &timer->clockThreadID);
 }
 
 void timerClockOff(FVMTimer* timer) {

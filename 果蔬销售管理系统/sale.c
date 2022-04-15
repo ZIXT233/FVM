@@ -184,9 +184,9 @@ void SSPAutoApplicate(SSP* head, Record* preOrder) {
 }
 
 
-const static Coord PreOrderPos = { 2,3 }, PreOrderRectSize = { 18,113 }, PreOrderMenu = { 22, 3 };
-const static Coord optCSPPos = { 2,117 }, optCSPMenuPos = { 22,117 }, optCSPRectSize = { 18,30 };
-const static Coord SSPGiftPos = { 2,117 }, SSPGiftMenuPos = { 22,117 }, GiftRectSize = { 18,65 };
+const static Coord PreOrderPos = { 2,3 }, PreOrderMenu = { 22, 3 };
+const static Coord optCSPPos = { 2,117 }, optCSPMenuPos = { 22,117 };
+const static Coord SSPGiftPos = { 2,117 }, SSPGiftMenuPos = { 22,117 };
 const static Coord SalePlanMenu = { 22,3 };
 #define SSPMAX 1000
 #define CSPMAX 1000
@@ -207,6 +207,7 @@ int settleProc(FVMO gdata, Record* preOrder) {
 		/*
 		* 这里处理账单
 		*/
+		financeIncome(gdata.finance, pos->prod.amount);
 
 		//处理库存
 		inv = invQueryID(gdata.inventory, pos->invID);
@@ -369,15 +370,15 @@ int giftSelect(FVMO gdata, Record* preOrder) {
 			coordPrintf(gdata.renderer, (Coord) { SSPGiftPos.x + GiftRectSize.x / 2, SSPGiftPos.y + GiftRectSize.y / 2 - 6 }, "已无可选赠品");
 		}
 		drawMenu(gdata.renderer, SalePlanMenu, "赠品选择", 6, 1,
-			"订单下一页",
 			"订单上一页",
+			"订单下一页",
 			"选择当前方案赠品",
 			"下一方案赠品",
 			"前往结算",
 			"退出");
 		drawMenu(gdata.renderer, optCSPMenuPos, "赠品浏览", 2, 11,
-			"下一页",
-			"上一页");
+			"上一页",
+			"下一页");
 
 		inputStart(gdata.renderer, INPUT_ORIGIN);
 		renderPresent(gdata.renderer);
@@ -480,8 +481,8 @@ int salePlanSelect(FVMO gdata, Inventory* cart) {
 		optCSP = CSPOptionalListGen(gdata.CSP, preOrder);
 		drawListPage(gdata.renderer, optCSPPos, "可用组合销售方案", drawCSPList, &optCSP->list, &optCSPPageStart, PageSize, optCSPRectSize, NULL);
 		drawMenu(gdata.renderer, SalePlanMenu, "销售方案选择", 8, 1,
-			"订单下一页",
 			"订单上一页",
+			"订单下一页",
 			"应用单品销售方案",
 			"应用组合销售方案",
 			"取消应用单品销售方案",
@@ -489,8 +490,8 @@ int salePlanSelect(FVMO gdata, Inventory* cart) {
 			"下一步(赠品选择)",
 			"退出");
 		drawMenu(gdata.renderer, optCSPMenuPos, "可用组合销售方案浏览", 3, 11,
-			"下一页",
 			"上一页",
+			"下一页",
 			"方案详情");
 		inputStart(gdata.renderer, INPUT_ORIGIN);
 		renderPresent(gdata.renderer);
@@ -564,7 +565,7 @@ void sale(FVMO gdata) {
 	while (1) {
 		renderClear(gdata.renderer);
 		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
-		drawInvPage(gdata.renderer, cartPos, "购物车", invShowPageJump(cart, &cartPageStart, PageSize), cartPageStart, PageSize);
+		drawListPage(gdata.renderer, cartPos, "购物车", drawInvList, &cart->list, &pageStart, PageSize, invListRectSize, NULL);
 		drawMenu(gdata.renderer, cartMenuPos, "购物车", 5, 11,
 			"上一页",
 			"下一页",
@@ -573,12 +574,12 @@ void sale(FVMO gdata) {
 			"清空购物车");
 		if (inFilter) {
 			filterList = invFilterListGen(gdata.inventory, &filter);
-			drawInvPage(gdata.renderer, saleListPos, "筛选信息", invShowPageJump(filterList, &pageStart, PageSize), pageStart, PageSize);
+			drawListPage(gdata.renderer, invListPos, "筛选信息", drawInvList, &filterList->list, &pageStart, PageSize, invListRectSize, NULL);
 			invListClear(filterList);
 			free(filterList);
 		}
 		else {
-			drawInvPage(gdata.renderer, saleListPos, "库存信息", invShowPageJump(gdata.inventory, &pageStart, PageSize), pageStart, PageSize);
+			drawListPage(gdata.renderer, invListPos, "筛选信息", drawInvList, &gdata.inventory->list, &pageStart, PageSize, invListRectSize, NULL);
 		}
 		drawMenu(gdata.renderer, saleMenuPos, "商品销售", 7, 1,
 			"上一页",
@@ -622,8 +623,10 @@ void sale(FVMO gdata) {
 			cartAdd(cart, gdata.inventory);
 			break;
 		case 6:
-			if (salePlanSelect(gdata, cart) == SETTLE_SUCCESS) {
-				invListClear(cart);
+			if (cart->list.size >= 1) {
+				if (salePlanSelect(gdata, cart) == SETTLE_SUCCESS) {
+					invListClear(cart);
+				}
 			}
 			break;
 		case 7:

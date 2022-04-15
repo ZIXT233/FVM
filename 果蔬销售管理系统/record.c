@@ -100,3 +100,74 @@ Record* recordShowPageJump(const Record* head,int type, int* pageStart, const in
 		else *pageStart -= pageSize;
 	}
 }
+
+Finance recordFinanceOpt(const Record* rec,Finance finance) {
+	switch (rec->type)
+	{
+	case PURCHASE:
+		financeExpend(&finance, rec->prod.amount);
+		break;
+	case SALE:
+		financeIncome(&finance, rec->prod.amount);
+		break;
+	case GIFT:
+		financeIncome(&finance, rec->prod.amount);
+		break;
+	case UPDATE:
+		break;
+	case DESTROY:
+		break;
+	default:
+		break;
+	}
+	return finance;
+}
+
+void recordStatsWeight(const Record *head, int type, const Record* filter, double weightTable[]) {
+	for (int i = 1; i <= RecordTypeNum; i++) weightTable[i] = 0;
+	if (type == TIME_RECORDS) {
+		listForEachEntry(Record, pos, &head->timeList, timeList) {
+			if (!recordMatch(pos, filter)) continue;
+			weightTable[pos->type] += recordTypeProdDirect[pos->type] * pos->prod.weight;
+		}
+	}
+	else if (type == INV_RECORDS) {
+		listForEachEntry(Record, pos, &head->IRList, IRList) {
+			if (!recordMatch(pos, filter)) continue;
+			weightTable[pos->type] += recordTypeProdDirect[pos->type] * pos->prod.weight;
+		}
+	}
+}
+
+void recordStatsQuantity(const Record* head, int type, const Record* filter, int quantityTable[]) {
+	for (int i = 1; i <= RecordTypeNum; i++) quantityTable[i] = 0;
+	if (type == TIME_RECORDS) {
+		listForEachEntry(Record, pos, &head->timeList, timeList) {
+			if (!recordMatch(pos, filter)) continue;
+			quantityTable[pos->type] += recordTypeProdDirect[pos->type] * pos->prod.quantity;
+		}
+	}
+	else if (type == INV_RECORDS) {
+		listForEachEntry(Record, pos, &head->IRList, IRList) {
+			if (!recordMatch(pos, filter)) continue;
+			quantityTable[pos->type] += recordTypeProdDirect[pos->type] * pos->prod.quantity;
+		}
+	}
+}
+Finance recordStatsFinance(const Record* head, int type,const Record* filter, double startUpCapital) {
+	Finance finance;
+	financeInit(&finance,startUpCapital);
+	if(type==TIME_RECORDS){
+		listForEachEntry(Record, pos, &head->timeList, timeList) {
+			if(!recordMatch(pos,filter)) continue;
+			finance = recordFinanceOpt(pos, finance);
+		}
+	}
+	else if (type == INV_RECORDS) {
+		listForEachEntry(Record, pos, &head->IRList, IRList) {
+			if (!recordMatch(pos,filter)) continue;
+			finance = recordFinanceOpt(pos, finance);
+		}
+	}
+	return finance;
+}

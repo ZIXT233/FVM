@@ -15,7 +15,7 @@ typedef struct tagProduct {
 	double weight;
 	double amount;
 	double unitPrice;
-	double purUPrice;
+	double purUPrice;  //仅在获取进货输入时使用，进货记录中的 unitPrice等价purUPrice，在其他信息中无意义
 } Product;
 
 typedef struct tagIntRange {

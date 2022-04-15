@@ -3,6 +3,11 @@
 #include<stdlib.h>
 #include"renderer.h"
 
+
+Coord coordAdd(Coord a, Coord b) {
+	a.x += b.x, a.y += b.y;
+	return a;
+}
 Renderer* rendererCreate(int bufferSize) {
 	Renderer* renderer=(Renderer*) malloc(sizeof(Renderer));
 	renderer->buffer = (char*)malloc(bufferSize);
@@ -97,4 +102,3 @@ void renderPresent(Renderer* renderer) {
 	_cls();
 	fwrite(renderer->buffer, sizeof(char), renderer->offset - renderer->buffer, stdout);
 }
-

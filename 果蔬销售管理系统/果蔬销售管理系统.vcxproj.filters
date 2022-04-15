@@ -60,6 +60,12 @@
     <ClCompile Include="timer.c">
       <Filter>源文件\objects</Filter>
     </ClCompile>
+    <ClCompile Include="finance.c">
+      <Filter>源文件\objects</Filter>
+    </ClCompile>
+    <ClCompile Include="statistic.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="sale.h">
@@ -105,6 +111,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="timer.h">
+      <Filter>头文件\objects</Filter>
+    </ClInclude>
+    <ClInclude Include="finance.h">
       <Filter>头文件\objects</Filter>
     </ClInclude>
   </ItemGroup>
