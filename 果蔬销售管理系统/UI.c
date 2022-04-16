@@ -250,23 +250,43 @@ void drawCSPList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize
 void drawComInvList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg) {
 	Inventory* start = invEntry(entry);
 	FVMO* gdata = (FVMO*)exArg;
-	coordPrintf(renderer, origin, "品种\t\t种类\t\t商品ID");
-	origin.x++;
+	
+	Coord cur = origin;
+	CellData cellName[3] = { {drawCellStr,12,0,"品种"},{drawCellStr,12,0,"种类"},{drawCellStr,12,0,"商品ID"} };
+	drawColorBar(renderer, cur, 238, 232, 213, 40);
+	drawListItem(renderer, cur, cellName, 3);
+	//coordPrintf(renderer, origin, "品种\t\t种类\t\t商品ID");
+	cur.x++;
 	int n = 0;
 	char kind[30], var[30];
 	listForEachEntry(Inventory, pos, &start->list, list) {
-		if (n == pageSize) break;
 
-		strMakeLen(kind, pos->prod.kind, 12);
-		strMakeLen(var, pos->prod.variety, 10);
-		coordPrintf(renderer, origin, "%s\t%s\t%d", kind, var, pos->invID);
-		origin.x++;
+			if (n == pageSize) break;
+			/*
+			strMakeLen(kind, pos->prod.kind, 12);
+			strMakeLen(var, pos->prod.variety, 10);
+			coordPrintf(renderer, origin, "%s\t%s\t%d", kind, var, pos->invID);
+			origin.x++;
+			n++;
+		*/
+		CellData cellData[3] = { {drawCellStr,12,0,pos->prod.kind },
+								  {drawCellStr,12,0,pos->prod.variety},
+								  {drawCellInt,12,0,&pos->invID} };
+		if (n & 1)drawColorBar(renderer, cur, 238, 232, 213, 40);
+		else resetBackgroundColor(renderer);
+		drawListItem(renderer, cur, cellData, 3);
+		cur.x++; 
 		n++;
 	}
+
 	while (n++ != pageSize) origin.x++;
 	origin.y--;
 	origin.x++;
 	setCursorPos(renderer, origin);
+
+	//L开始
+
+
 }
 void drawPreOrderList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg) {
 	Record* start = listEntry(entry, Record, timeList);
@@ -483,15 +503,31 @@ void drawInvStatsList(Renderer* renderer, Coord origin, ListHead* entry, int pag
 }
 void drawGiftList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg) {
 	Inventory* start = invEntry(entry);
-	FVMO* gdata = (FVMO*)exArg;
-	coordPrintf(renderer, origin, "品种\t\t种类\t\t商品ID\t赠送量\t附加价格");
-	origin.x++;
+	//coordPrintf(renderer, origin, "品种\t\t种类\t\t商品ID\t赠送量\t附加价格");
+
+	
+	Coord cur = origin;
+	CellData cellName[5] = { {drawCellStr,14,0,"品种"},{drawCellStr,14,0,"种类"},{drawCellStr,14,0,"商品ID"},
+		{drawCellStr,15,0,"赠送量"},{drawCellStr,15,0,"附加价格"} };
+	drawColorBar(renderer,cur, 238, 232, 213, 80);
+	drawListItem(renderer, cur, cellName, 5);
+    cur.x++;
 	int n = 0;
-	char kind[30], var[30];
+	void* qw=NULL;
+	CellDataDrawer packDrawer = NULL;
 	listForEachEntry(Inventory, pos, &start->list, list) {
 		if (n == pageSize) break;
+		if (pos->prod.pack==BULK){
+			qw =&pos->prod.weight;
+			packDrawer = drawCellBULK;
+		}
+		else if (pos->prod.pack == UNIT) {
+		qw = &pos->prod.quantity;
+		packDrawer = drawCellUNIT;
+		}
 
-		strMakeLen(kind, pos->prod.kind, 12);
+		/*
+		if strMakeLen(kind, pos->prod.kind, 12);
 		strMakeLen(var, pos->prod.variety, 10);
 		coordPrintf(renderer, origin, "%s\t%s\t%d", kind, var, pos->invID);
 		if (pos->prod.pack == BULK) {
@@ -501,8 +537,20 @@ void drawGiftList(Renderer* renderer, Coord origin, ListHead* entry, int pageSiz
 			renderPrintf(renderer, "%6d个\t%8.2lf", pos->prod.quantity, pos->prod.unitPrice);
 		}
 		origin.x++;
+		n++;*/
+	
+		CellData cellData[5] = { {drawCellStr,14,0,pos->prod.kind},
+								{drawCellStr,14,0,pos->prod.variety},
+								{drawCellInt,14,0,&pos->invID},
+								{packDrawer,15,0,qw},
+								{drawCellDouble,15,0,&pos->prod.unitPrice} };
+		if (n & 1)drawColorBar(renderer, cur, 238, 232, 213, 80);
+		else resetBackgroundColor(renderer);
+		drawListItem(renderer, cur, cellData, 5);
+		cur.x++;
 		n++;
 	}
+
 }
 
 static Renderer* timeUpdateRenderer = NULL;

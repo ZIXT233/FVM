@@ -52,7 +52,7 @@ void drawCSPList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize
 static const Coord  CSPComInvRectSize = { 18,40 };
 void drawComInvList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
 
-static const Coord GiftRectSize = { 18,65 };
+static const Coord GiftRectSize = { 18,80 };
 void drawGiftList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
 
 static const Coord invListRectSize = { 18,75 };
