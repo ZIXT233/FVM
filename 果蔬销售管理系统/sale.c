@@ -185,8 +185,8 @@ void SSPAutoApplicate(SSP* head, Record* preOrder) {
 
 
 const static Coord PreOrderPos = { 2,3 }, PreOrderMenu = { 22, 3 };
-const static Coord optCSPPos = { 2,137 }, optCSPMenuPos = { 22,137 };
-const static Coord SSPGiftPos = { 2,137 }, SSPGiftMenuPos = { 22,137 };
+const static Coord optCSPPos = { 2,130 }, optCSPMenuPos = { 22,130 };
+const static Coord SSPGiftPos = { 2,130 }, SSPGiftMenuPos = { 22,130 };
 const static Coord SalePlanMenu = { 22,3 };
 #define SSPMAX 1000
 #define CSPMAX 1000

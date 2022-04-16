@@ -5,7 +5,7 @@
 #include"renderer.h"
 
 static const Coord UI_ORIGIN = { 1,1 }, INPUT_ORIGIN = { 35,1 }, NAN_COORD = { -1,-1 }, STATUS_ORIGIN = { 1,1 };
-static const Coord PanelSize = { 35,185 };
+static const Coord PanelSize = { 35,200 };
 
 void drawRectBorder(Renderer* renderer, Coord pos, Coord const size);
 void drawMenu(Renderer* renderer, Coord pos, const char* title, int n, int firstNum, ...);
@@ -52,7 +52,7 @@ void drawCSPList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize
 static const Coord  CSPComInvRectSize = { 18,40 };
 void drawComInvList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
 
-static const Coord GiftRectSize = { 18,80 };
+static const Coord GiftRectSize = { 18,66 };
 void drawGiftList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
 
 static const Coord invListRectSize = { 18,75 };
@@ -62,7 +62,7 @@ void drawInvList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize
 static const Coord RecordRectSize = { 18,140 };
 void drawRecordList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
 
-static const Coord  PreOrderRectSize = { 18,133 };
+static const Coord  PreOrderRectSize = { 18,126 };
 void drawPreOrderList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
 
 

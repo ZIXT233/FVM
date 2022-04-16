@@ -227,6 +227,7 @@ void storageLoadSalePlan(char filename[], SSP** pSSP, CSP** pCSP) {
 			goto SSPDEL;
 		}
 		int giftSize = giftHead->list.size;
+		giftHead->invRecord = NULL;
 		listInit(&giftHead->list);
 
 		for (int j = 0; j < giftSize; j++) {
@@ -253,6 +254,7 @@ void storageLoadSalePlan(char filename[], SSP** pSSP, CSP** pCSP) {
 	}
 	int cspSize = cspHead->list.size;
 	cspHead->optGifts = invListInit(invCreate());
+	cspHead->comInv = invListInit(invCreate());
 	listInit(&cspHead->list);
 
 	for (int i = 0; i < cspSize; i++) {
@@ -271,6 +273,7 @@ void storageLoadSalePlan(char filename[], SSP** pSSP, CSP** pCSP) {
 			goto CSPDEL;
 		}
 		int giftSize = giftHead->list.size;
+		giftHead->invRecord = NULL;
 		listInit(&giftHead->list);
 
 		for (int j = 0; j < giftSize; j++) {
@@ -281,7 +284,7 @@ void storageLoadSalePlan(char filename[], SSP** pSSP, CSP** pCSP) {
 				invDel(giftHead);
 				goto CSPDEL;
 			}
-			gift->invRecord = NULL;  //ÈßÓà²Ù×÷
+			gift->invRecord = NULL;  //¿Õ
 			listAddTail(&gift->list, &giftHead->list);
 		}
 
@@ -293,9 +296,10 @@ void storageLoadSalePlan(char filename[], SSP** pSSP, CSP** pCSP) {
 			goto CSPDEL;
 		}
 		int comInvSize = comInvHead->list.size;
+		comInvHead->invRecord = NULL;
 		listInit(&comInvHead->list);
 
-		for (int j = 0; j < giftSize; j++) {
+		for (int j = 0; j < comInvSize; j++) {
 			comInv = (Inventory*)malloc(sizeof(Inventory));
 			if (!fread(comInv, sizeof(Inventory), 1, SPFile)) {
 				free(comInv);

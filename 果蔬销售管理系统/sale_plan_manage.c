@@ -34,7 +34,6 @@ int SSPAdd(SSP* head, Inventory* invHead) {
 	breakDeliver(getDateTime("输入起始日期(默认不限):", &ssp->reqDateStart, false));
 	breakDeliver(getDateTime("输入截止日期(默认不限):", &ssp->reqDateEnd, false));
 	breakDeliver(getDoubleInput("输入折扣率:", &ssp->discount, (DoubleRange) { 0, 1 }, true));
-	ssp->optGifts = invListInit(invCreate());
 	while (1) {
 		printf("输入第%d种赠品(或输入quit结束)\n", ssp->optGifts->list.size + 1);
 		breakCatch(inputGift(&gift, invHead)) break;

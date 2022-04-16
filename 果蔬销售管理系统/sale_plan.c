@@ -5,12 +5,17 @@
 SSP* SSPCreate() {
 	SSP* _new = (SSP*)malloc(sizeof(SSP));
 	memset(_new, 0, sizeof(SSP));
+	_new->optGifts = invListInit(invCreate());
+	free(_new->optGifts->invRecord);
+	_new->optGifts->invRecord = NULL;
 	return _new;
 }
 
 void SSPDel(SSP* pos) {
-	invListClear(pos->optGifts);
-	free(pos->optGifts);
+	if (pos->optGifts) {
+		invListClear(pos->optGifts);
+		if (pos->optGifts)invDel(pos->optGifts);
+	}
 	free(pos);
 }
 void SSPListClear(SSP* head) {
@@ -44,15 +49,23 @@ CSP* CSPCreate() {
 	CSP* _new = (CSP*)malloc(sizeof(CSP));
 	memset(_new, 0, sizeof(CSP));
 	_new->comInv = invListInit(invCreate());
+	free(_new->comInv->invRecord);
+	_new->comInv->invRecord = NULL;
 	_new->optGifts = invListInit(invCreate());
+	free(_new->optGifts->invRecord);
+	_new->optGifts->invRecord = NULL;
 	return _new;
 }
 
 void CSPDel(CSP* pos) {
-	invListClear(pos->optGifts);
-	free(pos->optGifts);
-	invListClear(pos->comInv);
- 	free(pos->comInv);
+	if (pos->optGifts) {
+		invListClear(pos->optGifts);
+		if (pos->optGifts)invDel(pos->optGifts);
+	}
+	if (pos->comInv) {
+		invListClear(pos->comInv);
+		invDel(pos->comInv);
+	}
 	free(pos);
 }
 
@@ -78,12 +91,12 @@ CSP* CSPQueryID(CSP* head, int CSPID) {
 bool CSPHasInvID(CSP* pos, int invID) {
 
 	listForEachEntry(Inventory, invPos, &pos->comInv->list, list) {
-		if(invPos->invID == invID) return true;
+		if (invPos->invID == invID) return true;
 	}
 	return false;
 }
 void CSPListClear(CSP* head) {
-	listForEachEntrySafe(CSP,pos, &head->list,list) {
+	listForEachEntrySafe(CSP, pos, &head->list, list) {
 		listRemove(&pos->list);
 		CSPDel(pos);
 	}
@@ -105,13 +118,13 @@ CSP* CSPCopyCreate(CSP* src) {
 	return cp;
 }
 CSP* CSPOptionalListGen(CSP* head, Record* preOrder) {
-	CSP* optCSP = CSPListInit(CSPCreate()),*cp=NULL;
+	CSP* optCSP = CSPListInit(CSPCreate()), * cp = NULL;
 	Inventory* giftcp = NULL;
 	int invCnt;
-	listForEachEntry(CSP, cspPos, &head->list,list) {
+	listForEachEntry(CSP, cspPos, &head->list, list) {
 		invCnt = 0;
 		listForEachEntry(Record, recPos, &preOrder->timeList, timeList) {
-			if (recPos->CSPID==0 && CSPHasInvID(cspPos,recPos->invID)) {
+			if (recPos->CSPID == 0 && CSPHasInvID(cspPos, recPos->invID)) {
 				invCnt++;
 			}
 		}

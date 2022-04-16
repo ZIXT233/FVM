@@ -16,7 +16,7 @@ Inventory* invCopyCreate(const Inventory* src) {
 	return dst;
 }
 void invDel(Inventory* pos) {  //析构,删除商品信息但不删除其相关记录
-	free(pos->invRecord);
+	if(pos->invRecord)free(pos->invRecord);
 	free(pos);
 }
 Inventory* invEntry(ListHead* entry) {
