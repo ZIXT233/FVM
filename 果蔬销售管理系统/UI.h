@@ -66,9 +66,9 @@ void drawRecordList(Renderer* renderer, Coord origin, ListHead* entry, int pageS
 static const Coord  PreOrderRectSize = { 18,126 };
 void drawPreOrderList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
 
-static const Coord ProdDetailRectSize = { 5,75 };
-void showProductDetails(Product* prod);
-static const Coord InvDetailRectSize = { 8,75 };
+static const Coord ProdDetailsRectSize = { 5,75 };
+void showProductDetails(Renderer* renderer, Coord pos, Product* prod, int lineNum);
+static const Coord InvDetailsRectSize = { 8,75 };
 void showInvDetails(Renderer* renderer,Coord pos,Inventory* inv);
 void showRecordDetails(Renderer* renderer,Coord pos,Record* rec);
 void showSSPDetails(Renderer* renderer, Coord pos, SSP* ssp);
