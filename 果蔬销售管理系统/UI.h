@@ -29,6 +29,7 @@ void drawCellInt(Renderer* renderer, Coord origin, CellData* cell);
 void drawCellUNIT(Renderer* renderer, Coord origin, CellData* cell);
 void drawCellStr(Renderer* renderer, Coord origin, CellData* cell);
 void drawCellTime(Renderer* renderer, Coord origin, CellData* cell);
+void drawCellDate(Renderer* renderer, Coord origin, CellData* cell);
 void drawCellSSP(Renderer* renderer, Coord origin, CellData* cell);
 void drawCellCSP(Renderer* renderer, Coord origin, CellData* cell);
 void drawListItem(Renderer* renderer, Coord origin, CellData* cells, int cellCount);
@@ -65,8 +66,9 @@ void drawRecordList(Renderer* renderer, Coord origin, ListHead* entry, int pageS
 static const Coord  PreOrderRectSize = { 18,126 };
 void drawPreOrderList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
 
-
+static const Coord ProdDetailRectSize = { 5,75 };
 void showProductDetails(Product* prod);
+static const Coord InvDetailRectSize = { 8,75 };
 void showInvDetails(Renderer* renderer,Coord pos,Inventory* inv);
 void showRecordDetails(Renderer* renderer,Coord pos,Record* rec);
 void showSSPDetails(Renderer* renderer, Coord pos, SSP* ssp);
