@@ -28,6 +28,9 @@ void drawCellBULK(Renderer* renderer, Coord origin, CellData* cell);
 void drawCellInt(Renderer* renderer, Coord origin, CellData* cell);
 void drawCellUNIT(Renderer* renderer, Coord origin, CellData* cell);
 void drawCellStr(Renderer* renderer, Coord origin, CellData* cell);
+void drawCellTime(Renderer* renderer, Coord origin, CellData* cell);
+void drawCellSSP(Renderer* renderer, Coord origin, CellData* cell);
+void drawCellCSP(Renderer* renderer, Coord origin, CellData* cell);
 void drawListItem(Renderer* renderer, Coord origin, CellData* cells, int cellCount);
 typedef struct tagInvStatsArg {
 	Record* filter;
@@ -59,7 +62,7 @@ void drawInvList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize
 static const Coord RecordRectSize = { 18,140 };
 void drawRecordList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
 
-static const Coord  PreOrderRectSize = { 18,113 };
+static const Coord  PreOrderRectSize = { 18,133 };
 void drawPreOrderList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
 
 
