@@ -198,8 +198,7 @@ int settleProc(FVMO gdata, Record* preOrder) {
 	ti = FVMTimerGetFVMTime(gdata.timer);
 	listForEachEntrySafe(Record, pos, &preOrder->timeList, timeList) {
 		pos->time = ti;
-		if(pos->prod.pack==BULK)pos->prod.amount = pos->discount * pos->prod.unitPrice * pos->prod.weight;
-		else if(pos->prod.pack==UNIT) pos->prod.amount = pos->discount * pos->prod.unitPrice * pos->prod.quantity;
+		pos->prod.amount *= pos->discount;
 		listAddTail(&preOrder->IRList, &gdata.order->IRList);
 		recordIDAllocate(preOrder, gdata.order);
 
@@ -298,6 +297,7 @@ int giftAddToOrder(FVMO gdata, Record* preOrder, Inventory* gift, int SSPID, int
 		rec->CSPID = CSPID;
 		rec->type = GIFT;
 		listAddTail(&rec->timeList, &preOrder->timeList);
+		return 0;
 	}
 	else {
 		printf("库存中已无此赠品(任意键继续)\n");
@@ -398,13 +398,15 @@ int giftSelect(FVMO gdata, Record* preOrder) {
 				break;
 			}
 			if (ssp) {
-				breakCatch(inputInventoryID(ssp->optGifts, &giftInvID, &gift)) break;
-				giftAddToOrder(gdata, preOrder, gift, ssp->SSPID, 0);
+				do {
+					breakCatch(inputInventoryID(ssp->optGifts, &giftInvID, &gift)) break;
+				} while (giftAddToOrder(gdata, preOrder, gift, ssp->SSPID, 0) != 0);
 				sspidCur++;
 			}
 			else if (csp) {
-				breakCatch(inputInventoryID(csp->optGifts, &giftInvID, &gift)) break;
-				giftAddToOrder(gdata, preOrder, gift, 0, csp->CSPID);
+				do {
+					breakCatch(inputInventoryID(csp->optGifts, &giftInvID, &gift)) break;
+				} while (giftAddToOrder(gdata, preOrder, gift, 0, csp->CSPID) != 0);
 				cspidCur++;
 			}
 			break;
