@@ -12,9 +12,8 @@ int cartAdd(Inventory* cart, Inventory* head) {
 	int quantity;
 	double weight;
 	if (item == NULL) {
-		Inventory* item=NULL;
-		if (item->prod.pack == UNIT) {
-			if (item->prod.quantity <= 0) {
+		if (inv->prod.pack == UNIT) {
+			if (inv->prod.quantity <= 0) {
 				printf("库存不足\n");
 				getchar();
 				return -1;
@@ -24,8 +23,8 @@ int cartAdd(Inventory* cart, Inventory* head) {
 			item->prod.quantity = quantity;
 			item->prod.amount = item->prod.quantity * item->prod.unitPrice;
 		}
-		else if (item->prod.pack == BULK) {
-			if (fLessEq(item->prod.weight, 0)) {
+		else if (inv->prod.pack == BULK) {
+			if (fLessEq(inv->prod.weight, 0)) {
 				printf("库存不足");
 				getchar();
 				return -1;
@@ -46,7 +45,6 @@ int cartAdd(Inventory* cart, Inventory* head) {
 				return -1;
 			}
 			breakDeliver(getUIntInput("请输入购买数量:", &quantity, (IntRange) { 0, inv->prod.quantity - item->prod.quantity }, true)); //确保增加后不超出库存量
-			item = invCopyCreate(inv);
 			item->prod.quantity += quantity;
 			item->prod.amount = item->prod.quantity * item->prod.unitPrice;
 		}
@@ -57,7 +55,6 @@ int cartAdd(Inventory* cart, Inventory* head) {
 				return -1;
 			}
 			breakDeliver(getDoubleInput("请输入购买重量:", &weight, (DoubleRange) { 0, inv->prod.weight - item->prod.weight }, true));
-			item = invCopyCreate(inv);
 			centRound(weight);
 			item->prod.weight = item->prod.weight + weight;
 			item->prod.amount = item->prod.weight * item->prod.unitPrice;
