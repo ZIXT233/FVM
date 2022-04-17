@@ -443,6 +443,12 @@ void drawCellTime(Renderer* renderer, Coord origin, CellData* cell) {
 	localtime_s(&sti, &data);
 	coordPrintf(renderer, origin, " %d/%d/%d %02d:%02d:%02d", sti.tm_year + 1900, sti.tm_mon + 1, sti.tm_mday, sti.tm_hour, sti.tm_min, sti.tm_sec);
 }
+void drawCellDate(Renderer* renderer, Coord origin, CellData* cell) {
+	time_t data = *(time_t*)cell->data;
+	struct tm sti;
+	localtime_s(&sti, &data);
+	coordPrintf(renderer, origin, " %d/%d/%d", sti.tm_year + 1900, sti.tm_mon + 1, sti.tm_mday);
+}
 void drawCellSSP(Renderer* renderer, Coord origin, CellData* cell) {
 	SSP* data = (SSP*)cell->data;
 	if (data) {
@@ -943,32 +949,61 @@ int inputRecordFilter(Record* rec) {
 
 
 
-void showProductDetails(Renderer* renderer, Coord pos, Product* prod) {  //Only Show product attributes
+void showProductDetails(Renderer* renderer, Coord pos, Product* prod,int lineNum) {  //Only Show product attributes
 	struct tm date;
-	coordPrintf(renderer, pos, "种类:%s", prod->kind, prod->variety); pos.x++;
-	coordPrintf(renderer, pos, "品种:%s", prod->variety); pos.x++;
-	coordPrintf(renderer, pos, "品质:%s", quanlityText[prod->quality]); pos.x++;
-	localtime_s(&date, &prod->expiration);
-	coordPrintf(renderer, pos, "过期日期:%d.%d.%d", date.tm_year + 1900, date.tm_mon + 1, date.tm_mday); pos.x++;
+	Coord cur = pos;
+	int valWidth = ProdDetailsRectSize.y - 13;
+	CellData cellName[6][2] = { {{drawCellStr,12,0,"种类"},{drawCellStr,valWidth,0,&prod->kind}},
+								{{drawCellStr,12,0,"品种"},{drawCellStr,valWidth,1,&prod->variety}},
+								{{drawCellStr,12,0,"品质"},{drawCellStr,valWidth,0,&quanlityText[prod->quality]}},
+								{{drawCellStr,12,0,"过期日期"},{drawCellDate,valWidth,1,&prod->expiration}},
+								{{drawCellStr,12,0,"包装方式"},{drawCellStr,valWidth,0,"散装"}},
+								{{drawCellStr,12,0,"包装方式"},{drawCellStr,valWidth,0,"单元装"}}
+	};
+	for (int i = 0; i < 4; i++)
+	{
+		if (lineNum%2==0) drawColorBar(renderer, cur, 238, 232, 213, ProdDetailsRectSize.y);
+		else resetBackgroundColor(renderer);
+		drawListItem(renderer, cur, cellName[i], 2);
+		cur.x++;
+		lineNum++;
+	}
 	if (prod->pack == BULK) {
-		coordPrintf(renderer, pos, "包装方式:散装");
+		if (lineNum % 2==0) drawColorBar(renderer, cur, 238, 232, 213, ProdDetailsRectSize.y);
+		else resetBackgroundColor(renderer);
+		drawListItem(renderer, cur, cellName[4], 2);
 	}
 	else if (prod->pack == UNIT) {
-		coordPrintf(renderer, pos, "包装方式:单元装");
-	}pos.x++;
+		if (lineNum % 2==0) drawColorBar(renderer, cur, 238, 232, 213, ProdDetailsRectSize.y);
+		else resetBackgroundColor(renderer);
+		drawListItem(renderer, cur, cellName[5], 2);
+	}cur.x++;
 }
 
 void showInvDetails(Renderer* renderer, Coord pos, Inventory* inv) {
-	coordPrintf(renderer, pos, "商品ID:%d\n", inv->invID); pos.x++;
-	showProductDetails(renderer, pos, &inv->prod); pos.x += 5;
+	int curLineNum = 3;
+	Coord cur = pos;
+	int valWidth = InvDetailsRectSize.y - 13;
+	CellData cellName[4][2] = { {{drawCellStr,12,0,"商品ID"},{drawCellInt,valWidth,0,&inv->invID}},
+								{{drawCellStr,12,0,"库存重量"},{drawCellBULK,12,0,&inv->prod.weight}},
+								{{drawCellStr,12,0,"库存数量"},{drawCellUNIT,12,0,&inv->prod.quantity}},
+								{{drawCellStr,12,0,"销售单价"},{drawCellDouble,valWidth,0,&inv->prod.unitPrice}}
+	};
+	drawColorBar(renderer, cur, 238, 232, 213, InvDetailsRectSize.y);
+	drawListItem(renderer, cur, cellName[0], 2);
+	cur.x++;
+	showProductDetails(renderer, cur, &inv->prod,1); cur.x += ProdDetailsRectSize.x;
 	if (inv->prod.pack == BULK) {
-		coordPrintf(renderer, pos, "库存重量:%.2lf\n", inv->prod.weight);
+		drawColorBar(renderer, cur, 238, 232, 213, InvDetailsRectSize.y);
+		drawListItem(renderer, cur, cellName[1], 2);
 	}
 	else if (inv->prod.pack == UNIT) {
-		coordPrintf(renderer, pos, "库存数量:%d\n", inv->prod.quantity);
+		drawColorBar(renderer, cur, 238, 232, 213, InvDetailsRectSize.y);
+		drawListItem(renderer, cur, cellName[2], 2);
 	}
-	pos.x++;
-	coordPrintf(renderer, pos, "销售单价:%.2lf\n", inv->prod.unitPrice);
+	cur.x++;
+	resetBackgroundColor(renderer);
+	drawListItem(renderer, cur, cellName[3], 2);
 }
 static const Coord SSPDetailsRectSize = { 18,53 };
 void showSSPDetails(Renderer* renderer, Coord pos, SSP* ssp) {
@@ -1072,20 +1107,42 @@ char typeAmountText[5][20] = { "","采购总额","销售总额","总价变化","赠品额外收费
 char typeUpriceText[5][20] = { "","采购单价","销售单价","售价变化","赠品额外单价" };
 void showRecordDetails(Renderer* renderer, Coord pos, Record* rec) {
 	struct tm time;
-	localtime_s(&time, &rec->time);
-	coordPrintf(renderer, pos, "记录ID:%d", rec->recID); pos.x++;
-	coordPrintf(renderer, pos, "商品ID:%d", rec->invID); pos.x++;
-	coordPrintf(renderer, pos, "类型:%s", recordType[rec->type]); pos.x++;
-	coordPrintf(renderer, pos, "记录时间:%d/%d/%d %02d:%02d:%02d", time.tm_year + 1900, time.tm_mon + 1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_hour); pos.x++;
-	showProductDetails(renderer, pos, &rec->prod);
-	pos.x += 5;
+	Coord cur = pos;
+	CellData cellName[9][2] =
+	{ {{drawCellStr,12,0,"记录ID"},{drawCellInt,12,0,&rec->recID}},
+	  {{drawCellStr,12,0,"商品ID"},{drawCellInt,12,0,&rec->invID}},
+	  {{drawCellStr,12,0,"类型"},{drawCellStr,12,0,&recordType[rec->type]}},
+	  {{drawCellStr,12,0,"记录时间"},{drawCellDate,12,0,&rec->time}},
+	  {{drawCellStr,12,0,&typeQuantityText[rec->type]},{drawCellBULK,12,0,&rec->prod.weight}},
+	  {{drawCellStr,12,0,&typeQuantityText[rec->type]},{drawCellUNIT,12,0,&rec->prod.quantity}},
+	  {{drawCellStr,12,0,&typeUpriceText[rec->type]},{drawCellDouble,12,0,&rec->prod.purUPrice}},
+	  {{drawCellStr,12,0,&typeAmountText[rec->type]},{drawCellDouble,12,0,&rec->prod.amount}},
+	  {{drawCellStr,12,0,"附加信息"},{drawCellStr,12,0,&rec->addInfo}}
+	};
+	int i;
+	for (i=0; i < 4; i++)
+	{
+		if(i%2==0)drawColorBar(renderer, cur, 238, 232, 213, InvDetailsRectSize.y);
+		else resetBackgroundColor(renderer);
+		drawListItem(renderer, cur, cellName[i], 2);
+		cur.x++;
+	}
+	showProductDetails(renderer, cur, &rec->prod,i++);
+	cur.x += ProdDetailsRectSize.x;
 	if (rec->prod.pack == BULK) {
-		coordPrintf(renderer, pos, "%s: %.2lf斤\n", typeQuantityText[rec->type], rec->prod.weight); pos.x++;
+		resetBackgroundColor(renderer);
+		drawListItem(renderer, cur, cellName[i], 2);
 	}
 	else if (rec->prod.pack == UNIT) {
-		coordPrintf(renderer, pos, "%s: %d个\n", typeQuantityText[rec->type], rec->prod.quantity); pos.x++;
+		resetBackgroundColor(renderer);
+		drawListItem(renderer, cur, cellName[i+1], 2);
 	}
-	coordPrintf(renderer, pos, "%s：%.2lf\n", typeUpriceText[rec->type], rec->prod.purUPrice); pos.x++;
-	coordPrintf(renderer, pos, "%s: %.2lf\n", typeAmountText[rec->type], rec->prod.amount); pos.x++;
-	coordPrintf(renderer, pos, "附加信息:%s\n", rec->addInfo);
+	i += 2;
+	for (; i < 9; i++)
+	{
+		if(i%2==0) drawColorBar(renderer, cur, 238, 232, 213, InvDetailsRectSize.y);
+		else resetBackgroundColor(renderer);
+		drawListItem(renderer, cur, cellName[i], 2);
+		cur.x++;
+	}
 }
