@@ -214,7 +214,7 @@ void drawRecordList(Renderer* renderer, Coord origin, ListHead* entry, int pageS
 
 
 void drawInvCheckList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg) {
-	Record* start = recordEntry(entry,timeList);
+	Record* start = recordEntry(entry, timeList);
 	Coord cur = origin;
 	int n = 0;
 	void* qw = NULL;
@@ -236,7 +236,7 @@ void drawInvCheckList(Renderer* renderer, Coord origin, ListHead* entry, int pag
 			packDrawer = drawCellUNIT;
 		}
 		CellData cellData[6] = { {drawCellStr,12,0,pos->prod.kind},{drawCellStr,12,0,pos->prod.variety},{drawCellInt,10,0,&pos->invID},
-								  (pos->recID!=-1)?(CellData){drawCellInt,17,0,&pos->recID}:(CellData){drawCellStr,17,0," -"},
+								  (pos->recID != -1) ? (CellData) { drawCellInt,17,0,& pos->recID } : (CellData) { drawCellStr,17,0," -" },
 									{drawCellStr,65,0,pos->addInfo},{packDrawer,12,0,qw} };
 
 
@@ -247,21 +247,24 @@ void drawInvCheckList(Renderer* renderer, Coord origin, ListHead* entry, int pag
 		n++;
 	}
 }
-void drawListPage(Renderer* renderer, Coord origin, const char* title, ListDrawer drawer, ListHead* start, int* pageStartNum, int pageSize, Coord rectSize, void* exArg) {
+void drawTitleWindow(Renderer* renderer, Coord origin, const char* title, Coord rectSize) {
 	Coord titleRect;
 	titleRect.x = 1;
 	titleRect.y = rectSize.y;
 	drawRectBorder(renderer, origin, titleRect);
-	if (pageSize + 3 > rectSize.x) rectSize.x = pageSize + 3;
-	drawRectBorder(renderer, origin, rectSize);
-
-	start = listShowPageJump(start, pageStartNum, pageSize);
 	coordPrintf(renderer, (Coord) { origin.x + 1, origin.y + rectSize.y / 2 - strlen(title) / 2 }, "%s", title);
-	coordPrintf(renderer, (Coord) { origin.x + 1, origin.y + rectSize.y - 7 }, "%d/%d页", ((*pageStartNum - 1) / pageSize) + 1, ((start->root->size - 1) / pageSize) + 1);
-	origin.x += 3;
-	origin.y++;
-	drawer(renderer, origin, start, pageSize, exArg);
+	rectSize.x += 2;
+	drawRectBorder(renderer, origin, rectSize);
 }
+void drawListPage(Renderer* renderer, Coord origin, const char* title, ListDrawer drawer, ListHead* start, int* pageStartNum, int pageSize, Coord rectSize, void* exArg) {
+	Coord titleRect, listPos = origin;
+	listPos.x += 3, listPos.y += 1;
+	start = listShowPageJump(start, pageStartNum, pageSize);
+	drawer(renderer, listPos, start, pageSize, exArg);
+	drawTitleWindow(renderer, origin, title, rectSize);
+	coordPrintf(renderer, (Coord) { origin.x + 1, origin.y + rectSize.y - 7 }, "%d/%d页", ((*pageStartNum - 1) / pageSize) + 1, ((start->root->size - 1) / pageSize) + 1);
+}
+
 void drawSSPList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg) {
 	SSP* start = listEntry(entry, SSP, list);
 	Coord cur = origin;
@@ -409,8 +412,8 @@ void resetBackgroundColor(Renderer* renderer) {
 
 void drawCellDouble(Renderer* renderer, Coord origin, CellData* cell) {
 	double data = *(double*)cell->data;
-	if (cell->sign)coordPrintf(renderer, origin, " %+G", data);
-	else coordPrintf(renderer, origin, " %G", data);
+	if (cell->sign)coordPrintf(renderer, origin, " %+.2lf", data);
+	else coordPrintf(renderer, origin, " %.2lf", data);
 }
 void drawCellBULK(Renderer* renderer, Coord origin, CellData* cell) {
 	CellData sub = *cell;
@@ -786,7 +789,7 @@ int getDoubleInput(const char* query, double* value, DoubleRange range, bool str
 			continue;
 		}
 		if (sscanf_s(input, "%lf", &num) == 1) {
-			if (range.max < range.min || (num >= range.min && num <= range.max)) {
+			if (fLess(range.max,range.min) || (fGreaterEq(num,range.min) && fLessEq(num,range.max))) {
 				*value = num;
 				return INPUT_SUCCESS;
 			}
@@ -843,11 +846,12 @@ int inputInventoryID(const Inventory* head, int* id, Inventory** pInv) {
 		}
 	}
 }
-int inputRecordID(const Record* head, int type, int* id, Record** pRec) {
+
+int inputRecordID(const Record* head, int recordType, int* id, Record** pRec) {
 	*pRec = NULL;
 	while (1) {
 		breakDeliver(getUIntInput("请输入记录ID:", id, ALLINT, true));
-		if (*pRec = recordQueryID(head, *id, type)) return;
+		if (*pRec = recordQueryID(head, *id, recordType)) return;
 		else {
 			printf("查无此记录。\n");
 		}
@@ -884,12 +888,15 @@ int inputProduct(Product* prod) {
 	breakDeliver(getUIntInput("选择包装方式:", &prod->pack, (IntRange) { 1, 2 }, true));
 	if (prod->pack == BULK) {
 		breakDeliver(getDoubleInput("输入重量:", &prod->weight, WRANGE, true));
+		prod->weight = centRound(prod->weight);
 	}
 	else if (prod->pack == UNIT) {
 		breakDeliver(getUIntInput("输入数量:", &prod->quantity, QRANGE, true));
 	}
 	breakDeliver(getDoubleInput("输入进货单价:", &prod->purUPrice, UPRINCERANGE, true));
+	prod->purUPrice = centRound(prod->purUPrice);
 	breakDeliver(getDoubleInput("设定销售单价:", &prod->unitPrice, UPRINCERANGE, true));
+	prod->unitPrice = centRound(prod->unitPrice);
 	//if (prod->pack == BULK) prod->amount = prod->unitPrice * prod->weight;  
 	//else if (prod->pack == UNIT) prod->amount = prod->unitPrice * prod->quantity;
 	return INPUT_SUCCESS;
@@ -949,7 +956,7 @@ int inputRecordFilter(Record* rec) {
 
 
 
-void showProductDetails(Renderer* renderer, Coord pos, Product* prod,int lineNum) {  //Only Show product attributes
+void showProductDetails(Renderer* renderer, Coord pos, Product* prod, int lineNum) {  //Only Show product attributes
 	struct tm date;
 	Coord cur = pos;
 	int valWidth = ProdDetailsRectSize.y - 13;
@@ -962,19 +969,19 @@ void showProductDetails(Renderer* renderer, Coord pos, Product* prod,int lineNum
 	};
 	for (int i = 0; i < 4; i++)
 	{
-		if (lineNum%2==0) drawColorBar(renderer, cur, 238, 232, 213, ProdDetailsRectSize.y);
+		if (lineNum % 2 == 0) drawColorBar(renderer, cur, 238, 232, 213, ProdDetailsRectSize.y);
 		else resetBackgroundColor(renderer);
 		drawListItem(renderer, cur, cellName[i], 2);
 		cur.x++;
 		lineNum++;
 	}
 	if (prod->pack == BULK) {
-		if (lineNum % 2==0) drawColorBar(renderer, cur, 238, 232, 213, ProdDetailsRectSize.y);
+		if (lineNum % 2 == 0) drawColorBar(renderer, cur, 238, 232, 213, ProdDetailsRectSize.y);
 		else resetBackgroundColor(renderer);
 		drawListItem(renderer, cur, cellName[4], 2);
 	}
 	else if (prod->pack == UNIT) {
-		if (lineNum % 2==0) drawColorBar(renderer, cur, 238, 232, 213, ProdDetailsRectSize.y);
+		if (lineNum % 2 == 0) drawColorBar(renderer, cur, 238, 232, 213, ProdDetailsRectSize.y);
 		else resetBackgroundColor(renderer);
 		drawListItem(renderer, cur, cellName[5], 2);
 	}cur.x++;
@@ -992,7 +999,7 @@ void showInvDetails(Renderer* renderer, Coord pos, Inventory* inv) {
 	drawColorBar(renderer, cur, 238, 232, 213, InvDetailsRectSize.y);
 	drawListItem(renderer, cur, cellName[0], 2);
 	cur.x++;
-	showProductDetails(renderer, cur, &inv->prod,1); cur.x += ProdDetailsRectSize.x;
+	showProductDetails(renderer, cur, &inv->prod, 1); cur.x += ProdDetailsRectSize.x;
 	if (inv->prod.pack == BULK) {
 		drawColorBar(renderer, cur, 238, 232, 213, InvDetailsRectSize.y);
 		drawListItem(renderer, cur, cellName[1], 2);
@@ -1108,41 +1115,36 @@ char typeUpriceText[5][20] = { "","采购单价","销售单价","售价变化","赠品额外单价
 void showRecordDetails(Renderer* renderer, Coord pos, Record* rec) {
 	struct tm time;
 	Coord cur = pos;
-	CellData cellName[9][2] =
+	CellDataDrawer packDrawer = NULL;
+	void* qw = NULL;
+	if (rec->prod.pack == BULK) {
+		packDrawer = drawCellBULK;
+		qw = &rec->prod.weight;
+	}
+	else if (rec->prod.pack == UNIT) {
+		packDrawer = drawCellUNIT;
+		qw = &rec->prod.quantity;
+	}
+	CellData cellName[8][2] =
 	{ {{drawCellStr,12,0,"记录ID"},{drawCellInt,12,0,&rec->recID}},
 	  {{drawCellStr,12,0,"商品ID"},{drawCellInt,12,0,&rec->invID}},
 	  {{drawCellStr,12,0,"类型"},{drawCellStr,12,0,&recordType[rec->type]}},
 	  {{drawCellStr,12,0,"记录时间"},{drawCellDate,12,0,&rec->time}},
-	  {{drawCellStr,12,0,&typeQuantityText[rec->type]},{drawCellBULK,12,0,&rec->prod.weight}},
-	  {{drawCellStr,12,0,&typeQuantityText[rec->type]},{drawCellUNIT,12,0,&rec->prod.quantity}},
+	  {{drawCellStr,12,0,&typeQuantityText[rec->type]},{packDrawer,12,0,qw}},
 	  {{drawCellStr,12,0,&typeUpriceText[rec->type]},{drawCellDouble,12,0,&rec->prod.purUPrice}},
 	  {{drawCellStr,12,0,&typeAmountText[rec->type]},{drawCellDouble,12,0,&rec->prod.amount}},
 	  {{drawCellStr,12,0,"附加信息"},{drawCellStr,12,0,&rec->addInfo}}
 	};
-	int i;
-	for (i=0; i < 4; i++)
+	for (int i = 0, line = 0; i < 8; i++)
 	{
-		if(i%2==0)drawColorBar(renderer, cur, 238, 232, 213, InvDetailsRectSize.y);
+		if (i == 4) {
+			showProductDetails(renderer, cur, &rec->prod, line);
+			line += ProdDetailsRectSize.x;
+			cur.x += ProdDetailsRectSize.x;
+		}
+		if (line % 2) drawColorBar(renderer, cur, 238, 232, 213, InvDetailsRectSize.y);
 		else resetBackgroundColor(renderer);
 		drawListItem(renderer, cur, cellName[i], 2);
-		cur.x++;
-	}
-	showProductDetails(renderer, cur, &rec->prod,i++);
-	cur.x += ProdDetailsRectSize.x;
-	if (rec->prod.pack == BULK) {
-		resetBackgroundColor(renderer);
-		drawListItem(renderer, cur, cellName[i], 2);
-	}
-	else if (rec->prod.pack == UNIT) {
-		resetBackgroundColor(renderer);
-		drawListItem(renderer, cur, cellName[i+1], 2);
-	}
-	i += 2;
-	for (; i < 9; i++)
-	{
-		if(i%2==0) drawColorBar(renderer, cur, 238, 232, 213, InvDetailsRectSize.y);
-		else resetBackgroundColor(renderer);
-		drawListItem(renderer, cur, cellName[i], 2);
-		cur.x++;
+		cur.x++, line++;
 	}
 }

@@ -14,12 +14,23 @@ int cartAdd(Inventory* cart, Inventory* head) {
 	if (item == NULL) {
 		Inventory* item = invCopyCreate(inv);
 		if (item->prod.pack == UNIT) {
+			if (item->prod.quantity <= 0) {
+				printf("库存不足\n");
+				getchar();
+				return -1;
+			}
 			breakDeliver(getUIntInput("请输入购买数量:", &quantity, (IntRange) { 0, inv->prod.quantity }, true));
 			item->prod.quantity = quantity;
 			item->prod.amount = item->prod.quantity * item->prod.unitPrice;
 		}
 		else if (item->prod.pack == BULK) {
+			if (fLessEq(item->prod.weight, 0)) {
+				printf("库存不足");
+				getchar();
+				return -1;
+			}
 			breakDeliver(getDoubleInput("请输入购买重量:", &weight, (DoubleRange) { 0, inv->prod.weight }, true));
+			centRound(weight);
 			item->prod.weight = weight;
 			item->prod.amount = item->prod.weight * item->prod.unitPrice;
 		}
@@ -27,14 +38,25 @@ int cartAdd(Inventory* cart, Inventory* head) {
 	}
 	else {
 		if (item->prod.pack == UNIT) {
+			if (inv->prod.quantity - item->prod.quantity <= 0) {
+				printf("库存不足\n");
+				getchar();
+				return -1;
+			}
 			breakDeliver(getUIntInput("请输入购买数量:", &quantity, (IntRange) { 0, inv->prod.quantity - item->prod.quantity }, true)); //确保增加后不超出库存量
 			item->prod.quantity += quantity;
 			item->prod.amount = item->prod.quantity * item->prod.unitPrice;
 		}
 		else if (inv->prod.pack == BULK) {
-				breakDeliver(getDoubleInput("请输入购买重量:", &weight, (DoubleRange) { 0, inv->prod.weight - item->prod.weight }, true));
-				item->prod.weight += weight;
-				item->prod.amount = item->prod.weight * item->prod.unitPrice;
+			if (fLessEq(inv->prod.weight - item->prod.weight, 0)) {
+				printf("库存不足");
+				getchar();
+				return -1;
+			}
+			breakDeliver(getDoubleInput("请输入购买重量:", &weight, (DoubleRange) { 0, inv->prod.weight - item->prod.weight }, true));
+			centRound(weight);
+			item->prod.weight = item->prod.weight + weight;
+			item->prod.amount = item->prod.weight * item->prod.unitPrice;
 		}
 	}
 
@@ -198,7 +220,7 @@ int settleProc(FVMO gdata, Record* preOrder) {
 	ti = FVMTimerGetFVMTime(gdata.timer);
 	listForEachEntrySafe(Record, pos, &preOrder->timeList, timeList) {
 		pos->time = ti;
-		pos->prod.amount *= pos->discount;
+		pos->prod.amount = centRound(pos->prod.amount*pos->discount);
 		listAddTail(&preOrder->IRList, &gdata.order->IRList);
 		recordIDAllocate(preOrder, gdata.order);
 
@@ -211,7 +233,7 @@ int settleProc(FVMO gdata, Record* preOrder) {
 		//处理库存
 		inv = invQueryID(gdata.inventory, pos->invID);
 		inv->prod.quantity -= pos->prod.quantity;
-		inv->prod.weight -= pos->prod.weight;
+		inv->prod.weight = centRound(inv->prod.weight-pos->prod.weight);
 
 		//添加记录
 		rec = recordCreate();
@@ -290,7 +312,7 @@ int giftAddToOrder(FVMO gdata, Record* preOrder, Inventory* gift, int SSPID, int
 		rec->prod.quantity *= mul;
 		rec->prod.weight *= mul;
 		rec->prod.amount *= mul;
-		rec->addInfo[0]='\0';
+		rec->addInfo[0] = '\0';
 		rec->discount = 1;
 		rec->invID = gift->invID;
 		rec->SSPID = SSPID;
@@ -366,8 +388,7 @@ int giftSelect(FVMO gdata, Record* preOrder) {
 			drawListPage(gdata.renderer, SSPGiftPos, csp->planName, drawGiftList, &csp->optGifts->list, &giftPageStart, PageSize, GiftRectSize, &gdata);
 		}
 		else {
-			drawRectBorder(gdata.renderer, SSPGiftPos, GiftRectSize);
-			coordPrintf(gdata.renderer, (Coord) { SSPGiftPos.x + GiftRectSize.x / 2, SSPGiftPos.y + GiftRectSize.y / 2 - 6 }, "已无可选赠品");
+			drawTitleWindow(gdata.renderer, SSPGiftPos,"已无可选赠品", GiftRectSize);
 		}
 		drawMenu(gdata.renderer, SalePlanMenu, "赠品选择", 6, 1,
 			"订单上一页",
@@ -522,7 +543,8 @@ int salePlanSelect(FVMO gdata, Inventory* cart) {
 			if (giftSelect(gdata, preOrder) == SETTLE_SUCCESS) {
 				pageStackPop(gdata.pageStack);
 				return SETTLE_SUCCESS;
-			} else {
+			}
+			else {
 				break;
 			}
 
@@ -544,7 +566,7 @@ int salePlanSelect(FVMO gdata, Inventory* cart) {
 			break;
 		case 13:
 			breakCatch(inputCSPID(gdata.CSP, &num, &csp)) break;
-			CSPDetails(csp,gdata);
+			CSPDetails(csp, gdata);
 		default:
 			break;
 		}
@@ -619,7 +641,7 @@ void sale(FVMO gdata) {
 			break;
 		case 4:
 			breakCatch(inputInventoryID(gdata.inventory, &num, &inv)) break;
-			invDetails(inv,gdata);
+			invDetails(inv, gdata);
 			break;
 		case 5:
 			cartAdd(cart, gdata.inventory);

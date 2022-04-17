@@ -68,3 +68,13 @@ int main(void) {
 	storageSaveFVMO(storageDir, gdata);
 	return 0;
 }
+
+//金额宽度>=17
+//config保存
+//商品信息更新
+//记录更新
+//密码
+//商品下架
+//退换货
+//会员优惠节日优惠
+//目录大小

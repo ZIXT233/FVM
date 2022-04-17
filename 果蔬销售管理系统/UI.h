@@ -9,6 +9,7 @@ static const Coord PanelSize = { 35,200 };
 
 void drawRectBorder(Renderer* renderer, Coord pos, Coord const size);
 void drawMenu(Renderer* renderer, Coord pos, const char* title, int n, int firstNum, ...);
+void drawTitleWindow(Renderer* renderer, Coord origin, const char* title, Coord rectSize);
 void drawStatusBar(Renderer* renderer, Coord origin, FVMO gdata);
 
 
@@ -39,39 +40,40 @@ typedef struct tagInvStatsArg {
 }InvStatsArg;
 
 //参考
-static const Coord statsRectSize = { 21,122 };
+static const Coord statsRectSize = { 19,122 };
 void drawInvStatsList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
  
 
 //从这里
-static const Coord SSPRectSize = { 18,30 };
+static const Coord SSPRectSize = { 16,30 };
 void drawSSPList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
 
-static const Coord CSPRectSize = { 18,30 }, optCSPRectSize = { 18,30 };
+static const Coord CSPRectSize = { 16,30 }, optCSPRectSize = { 16,30 };
 void drawCSPList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
 
-static const Coord  CSPComInvRectSize = { 18,40 };
+static const Coord  CSPComInvRectSize = { 16,40 };
 void drawComInvList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
 
-static const Coord GiftRectSize = { 18,66 };
+static const Coord GiftRectSize = { 16,66 };
 void drawGiftList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
 
-static const Coord invListRectSize = { 18,75 };
+static const Coord invListRectSize = { 16,75 };
 void drawInvList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
 //到这里
 
-static const Coord RecordRectSize = { 18,140 };
+static const Coord RecordRectSize = { 16,120 };
 void drawRecordList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
 
-static const Coord  PreOrderRectSize = { 18,126 };
+static const Coord  PreOrderRectSize = { 16,126 };
 void drawPreOrderList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
-static const Coord InvCheckRectSize = { 18,146 };
+static const Coord InvCheckRectSize = { 16,146 };
 void drawInvCheckList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
 
 static const Coord ProdDetailsRectSize = { 5,75 };
 void showProductDetails(Renderer* renderer, Coord pos, Product* prod, int lineNum);
 static const Coord InvDetailsRectSize = { 8,75 };
 void showInvDetails(Renderer* renderer,Coord pos,Inventory* inv);
+static const Coord RecordDetailsRectSize = { 13,75 };
 void showRecordDetails(Renderer* renderer,Coord pos,Record* rec);
 void showSSPDetails(Renderer* renderer, Coord pos, SSP* ssp);
 void showCSPDetails(Renderer* renderer, Coord pos, CSP* csp);
@@ -95,6 +97,7 @@ int inputGift(Inventory ** pGift, Inventory * invHead);
 int inputProductFilter(Product* prod);
 int inputRecordFilter(Record* rec);
 int inputInventoryID(const Inventory* head, int* id, Inventory** pInv);
+int inputRecordID(const Record* head, int recordType, int* id, Record** pRec);
 int inputSSPID(const SSP * head, int* id, SSP * *pSSP);
 int inputCSPID(const CSP * head, int* id, CSP * *pCSP);
 int getUIntInput(const char* query, int* value, IntRange range, bool strict);
