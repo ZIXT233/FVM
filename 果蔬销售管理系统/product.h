@@ -1,15 +1,17 @@
 #ifndef PRODUCT_H
 #define PRODUCT_H
+#include<math.h>
 #include"timer.h"
 #define INFOMAX 256
 
+static const double EPS = 0.0001;
 typedef struct tagProduct {
 	//Product attributes
 	char kind[INFOMAX];
 	char variety[INFOMAX];
 	time_t expiration;
 	int quality;
-	enum Packing { BULK=1, UNIT } pack;
+	enum Packing { BULK = 1, UNIT } pack;
 	//Product status
 	int quantity;
 	double weight;
@@ -26,7 +28,7 @@ typedef struct tagDoubleRange {
 }DoubleRange;
 
 static const IntRange QRANGE = { 0,1e7 }, ALLINT = { 0,-1 };
-static const DoubleRange WRANGE = { 0,1e7 },UPRINCERANGE = { 0,1e8 }, ALLDOUBLE = { 0,-1 };		
+static const DoubleRange WRANGE = { 0,1e7 }, UPRINCERANGE = { 0,1e8 }, ALLDOUBLE = { 0,-1 };
 static const double WMINI = 0.01;
 static inline int productMatch(const Product* inv, const Product* filter) {
 	if (filter == NULL) return 1;
@@ -38,4 +40,23 @@ static inline int productMatch(const Product* inv, const Product* filter) {
 	return 1;
 }
 
+static inline bool fEqual(double a, double b) {
+	return fabs(a - b) < EPS;
+}
+static inline bool fLess(double a, double b) {
+	return a - b <= -EPS;
+}
+static inline bool fLessEq(double a, double b) {
+	return a - b < EPS;
+}
+
+static inline bool fGreater(double a, double b) {
+	return a - b >= EPS;
+}
+static inline bool fGreaterEq(double a, double b) {
+	return a - b > -EPS;
+}
+inline double centRound(double a) {
+	return round(a * 100) / 100;
+}
 #endif

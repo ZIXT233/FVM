@@ -42,24 +42,26 @@ void recordStatsQuantity(const Record* head, int type, const Record* filter, int
 void recordStatsWeight(const Record* head, int type, const Record* filter, double weightTable[]);
 Finance recordStatsFinance(const Record* head, int type, const Record* filter, double startUpCapital);
 
-#define recordForEachStart(pos,recordType,entry) {\
+
+
+#define recordForEachStart(pos,head,recordType) {\
 	Record* pos=NULL;\
 	if (recordType == TIME_RECORDS) {\
-		pos = recordEntry(entry->next, timeList);\
+		pos = recordEntry(head->timeList.next, timeList);\
 	}\
 	else if (recordType == INV_RECORDS) {\
-		pos = recordEntry(entry->next, IRList);\
+		pos = recordEntry(head->IRList.next, IRList);\
 	}\
 	while (1){\
-		if (type == TIME_RECORDS) {\
-			if (&pos->timeList == entry->root) break;\
+		if (recordType == TIME_RECORDS) {\
+			if (&pos->timeList == head->timeList.root) break;\
 		}\
-		else if (type == INV_RECORDS) {\
-			if (&pos->IRList == entry->root) break;\
+		else if (recordType == INV_RECORDS) {\
+			if (&pos->IRList == head->IRList.root) break;\
 		}
 
 
-#define recordForEachEnd(pos,recordType,entry) \
+#define recordForEachEnd(pos,head,recordType) \
 		if (recordType == TIME_RECORDS) {\
 			pos = recordEntry(pos->timeList.next, timeList);\
 		} else if (recordType == INV_RECORDS) {\

@@ -24,7 +24,7 @@ void invManage(FVMO gdata) {
 		else {
 			drawListPage(gdata.renderer, invListPos, "库存信息", drawInvList, &gdata.inventory->list, &pageStart, PageSize, invListRectSize, NULL);
 		}
-		
+
 		drawMenu(gdata.renderer, invMenuPos, "库存管理", 9, 1,
 			"上一页",
 			"下一页",
@@ -36,7 +36,7 @@ void invManage(FVMO gdata) {
 			"退出",
 			"随机进货");
 		inputStart(gdata.renderer, INPUT_ORIGIN);
-		
+
 		renderPresent(gdata.renderer);
 		select = getSelect();
 		switch (select)
@@ -68,7 +68,7 @@ void invManage(FVMO gdata) {
 			break;
 		case 5:
 			breakCatch(inputInventoryID(gdata.inventory, &num, &inv)) break;
-			invDetails(inv,gdata);
+			invDetails(inv, gdata);
 			break;
 		case 6:
 			num = getSelect();
@@ -137,7 +137,7 @@ void randomPurchase(FVMO gdata) {
 void purchase(FVMO gdata) {
 	Inventory* head = gdata.inventory;
 	Inventory* inv = invCreate();
-	
+
 	invIDAllocate(inv, head);
 	inv->prod.weight = inv->prod.quantity = 0;
 	breakCatch(inputProduct(&inv->prod)) {
@@ -151,8 +151,8 @@ void purchase(FVMO gdata) {
 	recordIDAllocate(rec, gdata.record);
 	rec->addInfo[0] = '\0';
 	rec->prod.unitPrice = rec->prod.purUPrice; //进货记录中的单价等价于进货单价
-	if (inv->prod.pack == UNIT) rec->prod.amount = inv->prod.quantity * inv->prod.purUPrice;
-	else if (inv->prod.pack == BULK) rec->prod.amount = inv->prod.weight * inv->prod.purUPrice;
+	if (inv->prod.pack == UNIT) rec->prod.amount = centRound(inv->prod.quantity * inv->prod.purUPrice);
+	else if (inv->prod.pack == BULK) rec->prod.amount = centRound(inv->prod.weight * inv->prod.purUPrice);
 	financeExpend(gdata.finance, rec->prod.amount);
 	listAddTail(&rec->timeList, &gdata.record->timeList);
 	listAddTail(&rec->IRList, &inv->invRecord->IRList);;
@@ -160,15 +160,160 @@ void purchase(FVMO gdata) {
 	return;
 }
 
-void invDetails(Inventory* inv,FVMO gdata) {
+
+void invUpdate(Inventory* inv, FVMO gdata) {
+	Record* updateRecord = NULL;
+	double newPrice = 0;
+	char addinfo[INFOMAX];
+	breakDeliver(getStrInput("输入修改原因:", addinfo, INFOMAX, true));
+	drawOrdMenu("选择要修改的信息:", 3, 1, "商品数目", "商品品质", "商品售价");
+	int select;
+	breakDeliver(getUIntInput("选择一项:", &select, (IntRange) { 1, 3 }, true));
+	switch (select)
+	{
+	case 1:
+		if (inv->prod.pack == BULK) {
+			double weight;
+			breakDeliver(getDoubleInput("输入修改后的库存重量:", &weight, WRANGE, true));
+			weight = centRound(weight);
+			updateRecord = recordCreate();
+			updateRecord->prod = inv->prod;
+			updateRecord->prod.weight = weight - inv->prod.weight;
+			inv->prod.weight = weight;
+		}
+		else if (inv->prod.pack == UNIT) {
+			int quantity;
+			breakDeliver(getUIntInput("输入修改后的库存数量:", &quantity, QRANGE, true));
+			updateRecord = recordCreate();
+			updateRecord->prod = inv->prod;
+			updateRecord->prod.quantity = quantity - inv->prod.quantity;
+			updateRecord->prod.quantity = quantity;
+		}
+		updateRecord->type = UPDATE;
+		strcpy_s(updateRecord->addInfo, INFOMAX, addinfo);
+		updateRecord->invID = inv->invID;
+		updateRecord->prod.unitPrice=0;
+		updateRecord->time = FVMTimerGetFVMTime(gdata.timer);
+		recordIDAllocate(updateRecord, gdata.record);
+		listAddTail(&updateRecord->timeList, &gdata.record->timeList);
+		listAddTail(&updateRecord->IRList, &inv->invRecord->IRList);
+		break;
+	case 2:
+		drawOrdMenu("品质:", 3, 1, "优", "良", "差");
+		int quality;
+		double dWeight = 0;
+		int dQuantity = 0;
+		breakDeliver(getUIntInput("选择新品质:", &quality, (IntRange) { 1, 3 }, true));
+		if (inv->prod.pack == BULK) {
+			breakDeliver(getDoubleInput("输入受影响的库存重量:", &dWeight, (DoubleRange) { 0, inv->prod.weight }, true));
+			dWeight = centRound(dWeight);
+			updateRecord = recordCreate();
+			updateRecord->prod = inv->prod;
+			updateRecord->prod.weight = -dWeight;
+			inv->prod.weight = centRound(inv->prod.weight - dWeight);
+		}
+		else if (inv->prod.pack == UNIT) {
+			int dQuantity;
+			breakDeliver(getUIntInput("输入受影响的库存数量:", &dQuantity, (IntRange) { 0, inv->prod.quantity }, true));
+			updateRecord = recordCreate();
+			updateRecord->prod = inv->prod;
+			updateRecord->prod.quantity = -dQuantity;
+			inv->prod.quantity -= dQuantity;
+		}
+		updateRecord->type = UPDATE;
+		strcpy_s(updateRecord->addInfo, INFOMAX, addinfo);
+		updateRecord->invID = inv->invID;
+		updateRecord->time = FVMTimerGetFVMTime(gdata.timer);
+		recordIDAllocate(updateRecord, gdata.record);
+		listAddTail(&updateRecord->timeList, &gdata.record->timeList);
+		listAddTail(&updateRecord->IRList, &inv->invRecord->IRList);
+
+		Inventory* matchInv = NULL;
+		Product newProd = inv->prod;
+		newProd.quality = quality;
+		listForEachEntry(Inventory, pos, &gdata.inventory->list, list) {
+			if (!productMatch(&newProd, &pos->prod)) continue;
+			if (newProd.expiration != pos->prod.expiration) continue;
+			matchInv = pos;
+			break;
+		}
+		if (matchInv) {
+			updateRecord = recordCreate();
+			updateRecord->prod = matchInv->prod;
+			updateRecord->invID = matchInv->invID;
+			updateRecord->type = UPDATE;
+			if (updateRecord->prod.pack == BULK) {
+				updateRecord->prod.weight = dWeight;
+				matchInv->prod.weight = centRound(matchInv->prod.weight + dWeight);
+			}
+			else if (updateRecord->prod.pack == UNIT) {
+				updateRecord->prod.quantity = dQuantity;
+				matchInv->prod.quantity += dQuantity;
+			}
+			printf("库存中有同属性商品，已自动合并\n");
+		}
+		else {
+			Inventory* newInv = invCopyCreate(inv);
+			newInv->prod.quality = quality;
+			invIDAllocate(newInv, gdata.inventory);
+			newInv->invRecord = recordListInit(recordCreate());
+
+			updateRecord = recordCreate();
+			updateRecord->prod = newInv->prod;
+			updateRecord->invID = newInv->invID;
+			updateRecord->type = UPDATE;
+			if (updateRecord->prod.pack == BULK) {
+				newInv->prod.weight = dWeight;
+				updateRecord->prod.weight = dWeight;
+			}
+			else if (updateRecord->prod.pack == UNIT) {
+				newInv->prod.quantity = dQuantity;
+				updateRecord->prod.quantity = dQuantity;
+			}
+
+			listAddTail(&newInv->list, &gdata.inventory->list);
+			matchInv = newInv;
+			printf("已在库存信息中生成新品质商品\n");
+		}
+		updateRecord->type = UPDATE;
+		strcpy_s(updateRecord->addInfo, INFOMAX, addinfo);
+		updateRecord->time = FVMTimerGetFVMTime(gdata.timer);
+		recordIDAllocate(updateRecord, gdata.record);
+		listAddTail(&updateRecord->timeList, &gdata.record->timeList);
+		listAddTail(&updateRecord->IRList, &matchInv->invRecord->IRList);
+		getchar();
+		break;
+	case 3:
+		breakDeliver(getDoubleInput("输入修改后的销售单价:", &newPrice, UPRINCERANGE, true));
+		newPrice = centRound(newPrice);
+		updateRecord = recordCreate();
+		updateRecord->prod = inv->prod;
+		updateRecord->prod.quantity = updateRecord->prod.weight = 0;
+		updateRecord->prod.unitPrice = centRound(newPrice-inv->prod.unitPrice);
+		updateRecord->type = UPDATE;
+		strcpy_s(updateRecord->addInfo, INFOMAX, addinfo);
+		updateRecord->invID = inv->invID;
+		updateRecord->time = FVMTimerGetFVMTime(gdata.timer);
+		recordIDAllocate(updateRecord, gdata.record);
+		listAddTail(&updateRecord->timeList, &gdata.record->timeList);
+		listAddTail(&updateRecord->IRList, &inv->invRecord->IRList);
+		inv->prod.unitPrice = newPrice;
+		break;
+	default:
+		break;
+	}
+}
+static const Coord invDetailsPos = { 2,3 }, invDetailsMenuPos = { 22,3 };
+void invDetails(Inventory* inv, FVMO gdata) {
 	int invID, select;
 	struct tm date;
 	pageStackPush(pageStackCreate("商品详情"), gdata.pageStack);
 	while (1) {
 		renderClear(gdata.renderer);
 		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
-		showInvDetails(gdata.renderer,UI_ORIGIN,inv);
-		drawMenu(gdata.renderer, (Coord) { 20, 3 }, "商品详情", 3, 1,
+		drawTitleWindow(gdata.renderer, invDetailsPos, "商品详情", InvDetailsRectSize);
+		showInvDetails(gdata.renderer, (Coord) { invDetailsPos.x + 3, invDetailsPos.y + 1 }, inv);
+		drawMenu(gdata.renderer, invDetailsMenuPos, "商品详情", 3, 1,
 			"修改信息",
 			"仓管记录",
 			"退出");
@@ -178,9 +323,10 @@ void invDetails(Inventory* inv,FVMO gdata) {
 		switch (select)
 		{
 		case 1:
+			invUpdate(inv, gdata);
 			break;
 		case 2:
-			invRecordPage(inv->invRecord,gdata);
+			invRecordPage(inv->invRecord, gdata);
 			break;
 		case 3:
 			pageStackPop(gdata.pageStack);
@@ -201,11 +347,10 @@ Inventory* creatRandInv() {
 	inv->prod.pack = rand() % 2 + 1;
 	inv->prod.quality = rand() % 3 + 1;
 	inv->prod.expiration = time(NULL) * 1.5 * rand() / RAND_MAX;
-	inv->prod.purUPrice = 300 * (double)rand() / RAND_MAX;
-	inv->prod.unitPrice = inv->prod.purUPrice + 20.0 * rand() / RAND_MAX;
-	inv->prod.weight = inv->prod.quantity = 0;
+	inv->prod.purUPrice = centRound(300 * (double)rand() / RAND_MAX);
+	inv->prod.unitPrice = centRound(inv->prod.purUPrice + 20.0 * rand() / RAND_MAX);
 	if (inv->prod.pack == UNIT) inv->prod.quantity = rand() * 100;
-	else inv->prod.weight = (double)10000 * rand() / RAND_MAX;
+	else inv->prod.weight = centRound((double)10000 * rand() / RAND_MAX);
 	return inv;
 }
 
@@ -219,7 +364,7 @@ void recordPage(FVMO gdata) {
 	Record filter;
 	Inventory* inv = NULL;
 	Record* rec = NULL;
-	const int timeRec=TIME_RECORDS,invRec=INV_RECORDS;
+	const int timeRec = TIME_RECORDS, invRec = INV_RECORDS;
 	pageStackPush(pageStackCreate("仓管记录"), gdata.pageStack);
 	while (1) {
 		renderClear(gdata.renderer);
@@ -242,7 +387,7 @@ void recordPage(FVMO gdata) {
 			"记录删除",
 			"记录更改替换",
 			"退出");
-		inputStart(gdata.renderer,INPUT_ORIGIN);
+		inputStart(gdata.renderer, INPUT_ORIGIN);
 		renderPresent(gdata.renderer);
 		select = getSelect();
 		switch (select)
@@ -270,24 +415,17 @@ void recordPage(FVMO gdata) {
 			break;
 		case 4:
 			breakCatch(inputInventoryID(gdata.inventory, &num, &inv)) break;
-			invRecordPage(inv->invRecord,gdata);
+			invRecordPage(inv->invRecord, gdata);
 			break;
 		case 5:
-			while (1) {
-				recID = -1;
-				breakCatch(getUIntInput("请输入记录ID:", &recID, ALLINT, true)) break;
-				if (rec = recordQueryID(gdata.record, recID, 0)) break;
-				else {
-					printf("无此记录。\n");
-				}
-			}
+			breakCatch(inputRecordID(gdata.record, TIME_RECORDS, &recID, &rec)) break;
 			if (recID < 0) break;
-			recDetails(rec,gdata);
+			recDetails(rec, gdata);
 			break;
 		case 6:
 			num = getSelect();
 			listForEachSafe(pos, &gdata.record->timeList) {
-				if (num == (rec = recordEntry(pos, timeList))->invID) {
+				if (num == (rec = recordEntry(pos, timeList))->recID) {
 					listRemove(pos);
 					listRemove(&rec->IRList);
 					recordDel(rec);
@@ -303,7 +441,7 @@ void recordPage(FVMO gdata) {
 
 	}
 }
-void invRecordPage(Record* invRecord,FVMO gdata) {
+void invRecordPage(Record* invRecord, FVMO gdata) {
 	int inFilter = 0;
 	int pageStart = 1, pageStartSave = 1;
 	char filterOpt[2][20] = { "记录筛选","取消筛选" };
@@ -327,7 +465,7 @@ void invRecordPage(Record* invRecord,FVMO gdata) {
 		else {
 			drawListPage(gdata.renderer, RecordListPos, "商品仓管记录", drawRecordList, &invRecord->IRList, &pageStart, PageSize, RecordRectSize, &invRec);
 		}
-		drawMenu(gdata.renderer,invMenuPos, "仓管记录", 7, 1,
+		drawMenu(gdata.renderer, invMenuPos, "仓管记录", 7, 1,
 			"上一页",
 			"下一页",
 			filterOpt[inFilter],
@@ -361,21 +499,13 @@ void invRecordPage(Record* invRecord,FVMO gdata) {
 			}
 			break;
 		case 4:
-			while (1) {
-				recID = -1;
-				breakCatch(getUIntInput("请输入记录ID:", &recID, ALLINT, true)) break;
-				if (rec = recordQueryID(invRecord, recID, 1)) break;
-				else {
-					printf("无此记录。\n");
-				}
-			}
-			if (recID < 0) break;
-			recDetails(rec,gdata);
+			breakCatch(inputRecordID(invRecord, INV_RECORDS, &recID, &rec)) break;
+			recDetails(rec, gdata);
 			break;
 		case 5:
 			num = getSelect();
 			listForEachSafe(pos, &invRecord->IRList) {
-				if (num == (rec = recordEntry(pos, IRList))->invID) {
+				if (num == (rec = recordEntry(pos, IRList))->recID) {
 					listRemove(pos);
 					listRemove(&rec->timeList);
 					recordDel(rec);
@@ -392,14 +522,16 @@ void invRecordPage(Record* invRecord,FVMO gdata) {
 	}
 }
 
-void recDetails(Record* record,FVMO gdata) {
+static const Coord RecordDetailsPos = { 2,3 }, RecordDetailsMenuPos = { 22,3 };
+void recDetails(Record* record, FVMO gdata) {
 	int select;
 	pageStackPush(pageStackCreate("记录详情"), gdata.pageStack);
-	while (1) {	
+	while (1) {
 		renderClear(gdata.renderer);
 		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
-		showRecordDetails(gdata.renderer,UI_ORIGIN,record);
-		drawMenu(gdata.renderer, (Coord) { 20, 3 }, "记录详情", 1, 1,
+		drawTitleWindow(gdata.renderer, RecordDetailsPos, "记录详情", RecordDetailsRectSize);
+		showRecordDetails(gdata.renderer, (Coord) { RecordDetailsPos.x + 3, RecordDetailsPos.y + 1 }, record);
+		drawMenu(gdata.renderer, RecordDetailsMenuPos, "记录详情", 1, 1,
 			"退出");
 		inputStart(gdata.renderer, INPUT_ORIGIN);
 		renderPresent(gdata.renderer);

@@ -1,7 +1,92 @@
 #include"statistics.h"
 static const Coord StatsPageMenuPos = { 3,3 };
 static const Coord statsPos = { 2,3 }, statsMenuPos = { 25,3 };
+static const Coord InvCheckPos = { 2,3 }, financeCheckPos = { 22,4 },statsCheckMenuPos = { 25,3 };
 static const int PageSize = 15;
+
+void statsCheckPage(FVMO gdata) {
+
+	int errPageStart = 1;
+	int select, num;
+
+	Record* errList = recordListInit(recordCreate()), * errinfo = NULL;
+	char errmsg[INV_CHECK_MSG_MAX];
+	int errRecID;
+	listForEachEntry(Inventory, pos, &gdata.inventory->list, list) {
+		if (errRecID = invRecCheck(pos, errmsg)) {
+			errinfo = recordCreate();
+			errinfo->recID = errRecID;
+			errinfo->invID = pos->invID;
+			strcpy_s(errinfo->addInfo, INV_CHECK_MSG_MAX, errmsg);
+			errinfo->prod = pos->prod;
+			listAddTail(&errinfo->timeList, &errList->timeList);
+		}
+	}
+
+	bool financeError = false;
+	Finance checkFinance = recordStatsFinance(gdata.record, TIME_RECORDS, NULL, gdata.finance->startUpCapital);
+	if (gdata.finance->balance != checkFinance.balance || gdata.finance->cost != checkFinance.cost ||
+		gdata.finance->turnover != checkFinance.turnover || gdata.finance->profit != checkFinance.profit) {
+		financeError = true;
+	}
+	CellData financeData[3][6] = {
+		{ {drawCellStr,23,0,"资金核对"}, {drawCellStr,23,0,"启动资金"} ,{drawCellStr,23,0,"现有资金"},
+		  {drawCellStr,24,0,"营业额"},{drawCellStr,24,0,"成本"},{drawCellStr,24,0,"盈利额"} },
+		{ {drawCellStr,23,0,"商店资金"} ,{drawCellDouble,23,0,&gdata.finance->startUpCapital},{drawCellDouble,23,0,&gdata.finance->balance},
+		  {drawCellDouble,24,0,&gdata.finance->turnover},{drawCellDouble,24,0,&gdata.finance->cost},{drawCellDouble,24,0,&gdata.finance->profit} },
+		{ {drawCellStr,23,0,"记录验算资金"} ,{drawCellDouble,23,0,&checkFinance.startUpCapital},{drawCellDouble,23,0,&checkFinance.balance},
+		  {drawCellDouble,24,0,&checkFinance.turnover},{drawCellDouble,24,0,&checkFinance.cost},{drawCellDouble,24,0,&checkFinance.profit} }
+	};
+
+	pageStackPush(pageStackCreate("数据核对"), gdata.pageStack);
+	while (1) {
+		renderClear(gdata.renderer);
+		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
+		if (errList->timeList.size) {
+			drawListPage(gdata.renderer, InvCheckPos, "库存信息核对出现错误", drawInvCheckList, &errList->timeList, &errPageStart, PageSize, InvCheckRectSize, NULL);
+		}
+		else {
+			drawRectBorder(gdata.renderer, InvCheckPos, InvCheckRectSize);
+			Coord midPos = InvCheckPos;
+			midPos.x += InvCheckRectSize.x / 2;
+			midPos.y += InvCheckRectSize.y / 2 - 10;
+			coordPrintf(gdata.renderer, midPos, "库存信息数据核对无误");
+		}
+		Coord cur = financeCheckPos;
+		for (int i = 0; i < 3; i++) {
+			if (financeError) drawColorBar(gdata.renderer, cur,230, 140, 140, InvCheckRectSize.y);
+			else drawColorBar(gdata.renderer, cur, 160, 220, 170, InvCheckRectSize.y);
+			drawListItem(gdata.renderer, cur, financeData[i], 6);
+			cur.x++;
+		}
+		drawMenu(gdata.renderer, statsCheckMenuPos, "数据核对", 4, 1,
+			"上一页",
+			"下一页",
+			"查看商品记录",
+			"退出");
+		inputStart(gdata.renderer, INPUT_ORIGIN);
+		renderPresent(gdata.renderer);
+		select = getSelect();
+		switch (select) {
+		case 1:
+			errPageStart -= PageSize;
+			if (errPageStart < 1) errPageStart = 1;
+			break;
+		case 2:
+			errPageStart += PageSize;
+			break;
+		case 3:
+			break;
+		case 4:
+			recordListClear(errList);
+			recordDel(errList);
+			pageStackPop(gdata.pageStack);
+			return;
+		default:
+			break;
+		}
+	}
+}
 void statsPage(FVMO gdata) {
 	int invPageStart = 1;
 	int select, num;
@@ -10,7 +95,7 @@ void statsPage(FVMO gdata) {
 	Record dateFilter;
 	InvStatsArg isa;
 	int inDateFilter = 0;
-	char filterOpt[2][20] = { "指定时间段","取消指定时间段" }, filterTitle[50],*titleCur;
+	char filterOpt[2][20] = { "指定时间段","取消指定时间段" }, filterTitle[50], * titleCur;
 	struct tm sdate, edate;
 	pageStackPush(pageStackCreate("数据统计"), gdata.pageStack);
 	while (1) {
@@ -32,7 +117,7 @@ void statsPage(FVMO gdata) {
 			drawListPage(gdata.renderer, statsPos, "数据统计", drawInvStatsList, &gdata.inventory->list, &invPageStart, PageSize, statsRectSize, &isa);
 		}
 
-		drawMenu(gdata.renderer, statsMenuPos, "数据统计",6, 1,
+		drawMenu(gdata.renderer, statsMenuPos, "数据统计", 6, 1,
 			"上一页",
 			"下一页",
 			"查看商品记录",
@@ -62,11 +147,12 @@ void statsPage(FVMO gdata) {
 				dateFilter.time = dateFilter.lastTime = dateFilter.prod.expiration = TIME_NAN;
 				breakCatch(getDateTime("起始日期(年.月.日)(默认不限) : ", &dateFilter.time, false)) break;
 				breakCatch(getDateTime("截止日期(年.月.日)(默认不限) : ", &dateFilter.lastTime, false)) break;
-				if(dateFilter.lastTime!=TIME_NAN)dateFilter.lastTime += 3600 * 24 - 1;
+				if (dateFilter.lastTime != TIME_NAN)dateFilter.lastTime += 3600 * 24 - 1;
 				inDateFilter = 1;
 			}
 			break;
 		case 5:
+			statsCheckPage(gdata);
 			break;
 		case 6:
 			pageStackPop(gdata.pageStack);
