@@ -406,6 +406,11 @@ void drawCellStr(Renderer* renderer, Coord origin, CellData* cell) {
 	else strcpy_s(output, cell->width, data);
 	coordPrintf(renderer, origin, " %s", output);
 }
+void drawCellPackStr(Renderer* renderer, Coord origin, CellData* cell) {
+	int data = *(int*)cell->data;;
+	if(data==BULK) coordPrintf(renderer, origin, " 散装");
+	else if(data==UNIT) coordPrintf(renderer, origin, " 单元装");
+}
 void drawCellTime(Renderer* renderer, Coord origin, CellData* cell) {
 	time_t data = *(time_t*)cell->data;
 	struct tm sti;
@@ -988,9 +993,9 @@ void showSSPDetails(Renderer* renderer, Coord pos, SSP* ssp) {
 				{{drawCellStr,18,0,"应用商品ID"},{drawCellInt,valWidth,0,&ssp->invID}},
 				{{drawCellStr,18,0,"种类"} , { drawCellStr,valWidth,0, ssp->filter.kind } },
 				{{drawCellStr,18,0,"在此日期及前过期"},{drawCellDate,valWidth,0,&ssp->filter.expiration}},
-		/*5*/    {{drawCellStr,18,0,"品种"} ,{ drawCellDouble, valWidth, 0, ssp->filter.variety }},
+		/*5*/    {{drawCellStr,18,0,"品种"} ,{ drawCellStr, valWidth, 0, ssp->filter.variety }},
 				 {{drawCellStr,18,0,"品质"},{ drawCellStr,valWidth,0,quanlityText[ssp->filter.quality]}},
-				 {{drawCellStr,18,0,"包装方式"}, { drawCellDouble, valWidth, 0,&ssp->filter.pack }},
+				 {{drawCellStr,18,0,"包装方式"}, { drawCellPackStr, valWidth, 0,&ssp->filter.pack }},
 				 {{drawCellStr,18,0,"最低单价"},{ drawCellDouble,valWidth,0,&ssp->filter.unitPrice }},
 				 {{drawCellStr,18,0,"最低购买重量"}, { drawCellDouble,valWidth,0,&ssp->filter.weight }},
 		/*10*/    {{drawCellStr,18,0,"最低购买数量"},{ drawCellInt,valWidth,0,&ssp->filter.quantity }},
@@ -1041,33 +1046,35 @@ void showSSPDetails(Renderer* renderer, Coord pos, SSP* ssp) {
 				}
 			}
 			else if(i==1) {
-				if(ssp->filter.expiration != TIME_NAN) drawListItem(renderer, cur, cellName0[i + 3], 2), cur.x++;
+				
+				if (ssp->filter.variety[0])  drawListItem(renderer, cur, cellName0[i + 3+1], 2), cur.x++;
 				else {
-					cellName0[i + 3][1] = ((CellData) { drawCellStr, valWidth, 0, "不限" });
+					cellName0[i + 3+1][1] = ((CellData) { drawCellStr, valWidth, 0, "不限" });
 					drawListItem(renderer, cur, cellName0[i + 3], 2), cur.x++;
 				}
-
 			}
 			else if (i == 2) {
-				if (ssp->filter.variety[0])  drawListItem(renderer, cur, cellName0[i + 3], 2), cur.x++;
+				
+				if (ssp->filter.quality)  drawListItem(renderer, cur, cellName0[i + 3+1], 2), cur.x++;
 				else {
-					cellName0[i + 3][1] = ((CellData) { drawCellStr, valWidth, 0, "不限" });
+					cellName0[i + 3+1][1] = ((CellData) { drawCellStr, valWidth, 0, "不限" });
 					drawListItem(renderer, cur, cellName0[i + 3], 2), cur.x++;
 				}
 			}
 			else if (i == 3) {
-				if (ssp->filter.quality)  drawListItem(renderer, cur, cellName0[i + 3], 2), cur.x++;
+				
+				if (ssp->filter.pack)  drawListItem(renderer, cur, cellName0[i + 3+1], 2), cur.x++;
 				else {
-					cellName0[i + 3][1] = ((CellData) { drawCellStr, valWidth, 0, "不限" });
+					cellName0[i + 3+1][1] = ((CellData) { drawCellStr, valWidth, 0, "不限" });
 					drawListItem(renderer, cur, cellName0[i + 3], 2), cur.x++;
 				}
 			}
 			else if (i == 4){ 
-					if (ssp->filter.pack)  drawListItem(renderer, cur, cellName0[i + 3], 2), cur.x++;
-					else {
-						cellName0[i + 3][1] = ((CellData) { drawCellStr, valWidth, 0, "不限" });
-						drawListItem(renderer, cur, cellName0[i + 3], 2), cur.x++;
-					}
+				if (ssp->filter.expiration != TIME_NAN) drawListItem(renderer, cur, cellName0[i ], 2), cur.x++;
+				else {
+					cellName0[i ][1] = ((CellData) { drawCellStr, valWidth, 0, "不限" });
+					drawListItem(renderer, cur, cellName0[i + 3], 2), cur.x++;
+				}
 			}
 			else if (i == 5) {
 				if (ssp->filter.unitPrice)  drawListItem(renderer, cur, cellName0[i + 3], 2), cur.x++;
@@ -1127,31 +1134,6 @@ void showSSPDetails(Renderer* renderer, Coord pos, SSP* ssp) {
 	if (count % 2) resetBackgroundColor(renderer), count++;
 	else    drawColorBar(renderer, cur, 238, 232, 213, SSPDetailsRectSize.y), count++;
 	drawListItem(renderer, cur, cellName0[15], 2), cur.x++;
-
-
-	/*
-	if (ssp->invID) {
-		for (int i = 0; i < 8; i++) {
-			if (i % 2) drawColorBar(renderer, cur, 238, 232, 213, SSPDetailsRectSize.y);
-			else resetBackgroundColor(renderer);
-			//if (*cellName0[i].data) cellName0[i] = (CellData)((CellData) { drawCellStr, valWidth, 0, "不限" };
-			drawListItem(renderer, cur, cellName1[i], 2);
-			cur.x++;
-		}
-
-	}
-	else {
-
-		for (int i = 0; i < 14; i++) {
-			if (i % 2) drawColorBar(renderer, cur, 238, 232, 213, SSPDetailsRectSize.y);
-			else resetBackgroundColor(renderer);
-			drawListItem(renderer, cur, cellName2[i], 2);
-			cur.x++;
-		}
-	}*/
-
-
-
 
 
 	/*
@@ -1216,23 +1198,7 @@ void showSSPDetails(Renderer* renderer, Coord pos, SSP* ssp) {
 
 	coordPrintf(renderer, pos, "折扣率:%.2lf", ssp->discount), pos.x++;
 	coordPrintf(renderer, pos, "附加说明:%s", ssp->addInfo), pos.x++;
-	CellData cellName0[16][2] = { {{drawCellStr,12,0,"类型"},{drawCellStr,valWidth,0,"应用于制定ID商品"}},
-						{ {drawCellStr, 12, 0, "类型"}, { drawCellStr,valWidth,0,"批量应用于满足条件的商品" }},
-						{ {drawCellStr,12,0,"应用商品ID"},{drawCellInt,valWidth,0,ssp->invID} },
-						{ {drawCellStr,12,0,"种类"},(ssp->filter.kind[0]) ? ((CellData) { drawCellDouble,valWidth,0, ssp->filter.kind }) : ((CellData) { drawCellStr,valWidth,0,"不限" }) },
-						{ {drawCellStr,12,0,"在此日期及前过期"},(ssp->filter.expiration != TIME_NAN) ? ((CellData) { drawCellDate,valWidth,0,& ssp->filter.expiration }) : ((CellData) { drawCellStr,valWidth,0,"不限" }) },
-						{ {drawCellStr,12,0,"品种"},(ssp->filter.variety[0]) ? ((CellData) { drawCellDouble, valWidth, 0, ssp->filter.variety }) : ((CellData) { drawCellStr, valWidth, 0, "不限" }) },
-						{ {drawCellStr,12,0,"包装方式"},(ssp->filter.pack) ? ((CellData) { drawCellDouble, valWidth, 0,& ssp->filter.pack }) : ((CellData) { drawCellStr, valWidth, 0, "不限" }) },
-						{ {drawCellStr,12,0,"最低单价"},(ssp->filter.unitPrice) ? ((CellData) { drawCellDouble,valWidth,0,& ssp->filter.unitPrice }) : ((CellData) { drawCellStr,valWidth,0,"不限" }) },
-						{ {drawCellStr,12,0,"最低购买重量"},(ssp->filter.weight) ? ((CellData) { drawCellDouble,valWidth,0,& ssp->filter.weight }) : ((CellData) { drawCellStr,valWidth,0,"不限" }) },
-						{ {drawCellStr,12,0,"最低购买数量"},(ssp->filter.quantity) ? ((CellData) { drawCellInt,valWidth,0,& ssp->filter.quantity }) : ((CellData) { drawCellStr,valWidth,0,"不限" }) },
-						{ {drawCellStr,12,0,"最低总额"},(ssp->filter.amount) ? ((CellData) { drawCellDouble,valWidth,0,& ssp->filter.amount }) : ((CellData) { drawCellStr,valWidth,0,"不限" }) },
-						{ {drawCellStr,12,0,"开始日期"},(ssp->reqDateStart != TIME_NAN) ? ((CellData) { drawCellDate,valWidth,0,& ssp->reqDateStart }) : ((CellData) { drawCellStr,valWidth,0,"不限" }) },
-						{ {drawCellStr,12,0,"截止日期"},(ssp->reqDateEnd != TIME_NAN) ? ((CellData) { drawCellDate,valWidth,0,& ssp->reqDateEnd }) : ((CellData) { drawCellStr,valWidth,0,"不限" }) },
-						{ {drawCellStr,12,0,"折扣率"},{drawCellDouble,valWidth,0,&ssp->discount} },
-						{ {drawCellStr,12,0,"附加说明"},{drawCellStr,valWidth,0,ssp->addInfo} },
-						{ {drawCellStr,12,0,"品质"},(ssp->filter.quality) ? ((CellData) { drawCellStr,valWidth,0,quanlityText[ssp->filter.quality] }) : ((CellData) { drawCellStr,valWidth,0,"不限" }) }
-	};
+
 	*/
 }
 
