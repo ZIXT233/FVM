@@ -160,6 +160,149 @@ void purchase(FVMO gdata) {
 	return;
 }
 
+
+void invUpdate(Inventory* inv, FVMO gdata) {
+	Record* updateRecord = NULL;
+	double newPrice = 0;
+	char addinfo[INFOMAX];
+	breakDeliver(getStrInput("输入修改原因:", addinfo, INFOMAX, true));
+	drawOrdMenu("选择要修改的信息:", 3, 1, "商品数目", "商品品质", "商品售价");
+	int select;
+	breakDeliver(getUIntInput("选择一项:", &select, (IntRange) { 1, 3 }, true));
+	switch (select)
+	{
+	case 1:
+		if (inv->prod.pack == BULK) {
+			double weight;
+			breakDeliver(getDoubleInput("输入修改后的库存重量:", &weight, WRANGE, true));
+			weight = centRound(weight);
+			updateRecord = recordCreate();
+			updateRecord->prod = inv->prod;
+			updateRecord->prod.weight = weight - inv->prod.weight;
+			inv->prod.weight = weight;
+		}
+		else if (inv->prod.pack == UNIT) {
+			int quantity;
+			breakDeliver(getUIntInput("输入修改后的库存数量:", &quantity, QRANGE, true));
+			updateRecord = recordCreate();
+			updateRecord->prod = inv->prod;
+			updateRecord->prod.quantity = quantity - inv->prod.quantity;
+			updateRecord->prod.quantity = quantity;
+		}
+		updateRecord->type = UPDATE;
+		strcpy_s(updateRecord->addInfo, INFOMAX, addinfo);
+		updateRecord->invID = inv->invID;
+		updateRecord->prod.unitPrice=0;
+		updateRecord->time = FVMTimerGetFVMTime(gdata.timer);
+		recordIDAllocate(updateRecord, gdata.record);
+		listAddTail(&updateRecord->timeList, &gdata.record->timeList);
+		listAddTail(&updateRecord->IRList, &inv->invRecord->IRList);
+		break;
+	case 2:
+		drawOrdMenu("品质:", 3, 1, "优", "良", "差");
+		int quality;
+		double dWeight = 0;
+		int dQuantity = 0;
+		breakDeliver(getUIntInput("选择新品质:", &quality, (IntRange) { 1, 3 }, true));
+		if (inv->prod.pack == BULK) {
+			breakDeliver(getDoubleInput("输入受影响的库存重量:", &dWeight, (DoubleRange) { 0, inv->prod.weight }, true));
+			dWeight = centRound(dWeight);
+			updateRecord = recordCreate();
+			updateRecord->prod = inv->prod;
+			updateRecord->prod.weight = -dWeight;
+			inv->prod.weight = centRound(inv->prod.weight - dWeight);
+		}
+		else if (inv->prod.pack == UNIT) {
+			int dQuantity;
+			breakDeliver(getUIntInput("输入受影响的库存数量:", &dQuantity, (IntRange) { 0, inv->prod.quantity }, true));
+			updateRecord = recordCreate();
+			updateRecord->prod = inv->prod;
+			updateRecord->prod.quantity = -dQuantity;
+			inv->prod.quantity -= dQuantity;
+		}
+		updateRecord->type = UPDATE;
+		strcpy_s(updateRecord->addInfo, INFOMAX, addinfo);
+		updateRecord->invID = inv->invID;
+		updateRecord->time = FVMTimerGetFVMTime(gdata.timer);
+		recordIDAllocate(updateRecord, gdata.record);
+		listAddTail(&updateRecord->timeList, &gdata.record->timeList);
+		listAddTail(&updateRecord->IRList, &inv->invRecord->IRList);
+
+		Inventory* matchInv = NULL;
+		Product newProd = inv->prod;
+		newProd.quality = quality;
+		listForEachEntry(Inventory, pos, &gdata.inventory->list, list) {
+			if (!productMatch(&newProd, &pos->prod)) continue;
+			if (newProd.expiration != pos->prod.expiration) continue;
+			matchInv = pos;
+			break;
+		}
+		if (matchInv) {
+			updateRecord = recordCreate();
+			updateRecord->prod = matchInv->prod;
+			updateRecord->invID = matchInv->invID;
+			updateRecord->type = UPDATE;
+			if (updateRecord->prod.pack == BULK) {
+				updateRecord->prod.weight = dWeight;
+				matchInv->prod.weight = centRound(matchInv->prod.weight + dWeight);
+			}
+			else if (updateRecord->prod.pack == UNIT) {
+				updateRecord->prod.quantity = dQuantity;
+				matchInv->prod.quantity += dQuantity;
+			}
+			printf("库存中有同属性商品，已自动合并\n");
+		}
+		else {
+			Inventory* newInv = invCopyCreate(inv);
+			newInv->prod.quality = quality;
+			invIDAllocate(newInv, gdata.inventory);
+			newInv->invRecord = recordListInit(recordCreate());
+
+			updateRecord = recordCreate();
+			updateRecord->prod = newInv->prod;
+			updateRecord->invID = newInv->invID;
+			updateRecord->type = UPDATE;
+			if (updateRecord->prod.pack == BULK) {
+				newInv->prod.weight = dWeight;
+				updateRecord->prod.weight = dWeight;
+			}
+			else if (updateRecord->prod.pack == UNIT) {
+				newInv->prod.quantity = dQuantity;
+				updateRecord->prod.quantity = dQuantity;
+			}
+
+			listAddTail(&newInv->list, &gdata.inventory->list);
+			matchInv = newInv;
+			printf("已在库存信息中生成新品质商品\n");
+		}
+		updateRecord->type = UPDATE;
+		strcpy_s(updateRecord->addInfo, INFOMAX, addinfo);
+		updateRecord->time = FVMTimerGetFVMTime(gdata.timer);
+		recordIDAllocate(updateRecord, gdata.record);
+		listAddTail(&updateRecord->timeList, &gdata.record->timeList);
+		listAddTail(&updateRecord->IRList, &matchInv->invRecord->IRList);
+		getchar();
+		break;
+	case 3:
+		breakDeliver(getDoubleInput("输入修改后的销售单价:", &newPrice, UPRINCERANGE, true));
+		newPrice = centRound(newPrice);
+		updateRecord = recordCreate();
+		updateRecord->prod = inv->prod;
+		updateRecord->prod.quantity = updateRecord->prod.weight = 0;
+		updateRecord->prod.unitPrice = centRound(newPrice-inv->prod.unitPrice);
+		updateRecord->type = UPDATE;
+		strcpy_s(updateRecord->addInfo, INFOMAX, addinfo);
+		updateRecord->invID = inv->invID;
+		updateRecord->time = FVMTimerGetFVMTime(gdata.timer);
+		recordIDAllocate(updateRecord, gdata.record);
+		listAddTail(&updateRecord->timeList, &gdata.record->timeList);
+		listAddTail(&updateRecord->IRList, &inv->invRecord->IRList);
+		inv->prod.unitPrice = newPrice;
+		break;
+	default:
+		break;
+	}
+}
 static const Coord invDetailsPos = { 2,3 }, invDetailsMenuPos = { 22,3 };
 void invDetails(Inventory* inv, FVMO gdata) {
 	int invID, select;
@@ -180,6 +323,7 @@ void invDetails(Inventory* inv, FVMO gdata) {
 		switch (select)
 		{
 		case 1:
+			invUpdate(inv, gdata);
 			break;
 		case 2:
 			invRecordPage(inv->invRecord, gdata);

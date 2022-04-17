@@ -4,6 +4,7 @@
 #include"fvm_objects.h"
 #include"homepage.h"
 #include"data_storage.h"
+#include"sha256.h"
 
 FILE* stdinLog;
 
@@ -34,6 +35,7 @@ FVMO* FVMSystemInit() {
 		gdata->record = recordListInit(recordCreate());
 		gdata->SSP = SSPListInit(SSPCreate());
 		gdata->CSP = CSPListInit(CSPCreate());
+		
 	}
 	else if (stat == STORAGE_INCOMPLETE) {
 		//问问
@@ -78,3 +80,5 @@ int main(void) {
 //退换货
 //会员优惠节日优惠
 //目录大小
+//时间模块修改
+//prod中添加单位名

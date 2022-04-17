@@ -969,19 +969,19 @@ void showProductDetails(Renderer* renderer, Coord pos, Product* prod, int lineNu
 	};
 	for (int i = 0; i < 4; i++)
 	{
-		if (lineNum % 2 == 0) drawColorBar(renderer, cur, 238, 232, 213, ProdDetailsRectSize.y);
+		if (lineNum % 2) drawColorBar(renderer, cur, 238, 232, 213, ProdDetailsRectSize.y);
 		else resetBackgroundColor(renderer);
 		drawListItem(renderer, cur, cellName[i], 2);
 		cur.x++;
 		lineNum++;
 	}
 	if (prod->pack == BULK) {
-		if (lineNum % 2 == 0) drawColorBar(renderer, cur, 238, 232, 213, ProdDetailsRectSize.y);
+		if (lineNum % 2) drawColorBar(renderer, cur, 238, 232, 213, ProdDetailsRectSize.y);
 		else resetBackgroundColor(renderer);
 		drawListItem(renderer, cur, cellName[4], 2);
 	}
 	else if (prod->pack == UNIT) {
-		if (lineNum % 2 == 0) drawColorBar(renderer, cur, 238, 232, 213, ProdDetailsRectSize.y);
+		if (lineNum % 2) drawColorBar(renderer, cur, 238, 232, 213, ProdDetailsRectSize.y);
 		else resetBackgroundColor(renderer);
 		drawListItem(renderer, cur, cellName[5], 2);
 	}cur.x++;
@@ -991,26 +991,31 @@ void showInvDetails(Renderer* renderer, Coord pos, Inventory* inv) {
 	int curLineNum = 3;
 	Coord cur = pos;
 	int valWidth = InvDetailsRectSize.y - 13;
-	CellData cellName[4][2] = { {{drawCellStr,12,0,"商品ID"},{drawCellInt,valWidth,0,&inv->invID}},
-								{{drawCellStr,12,0,"库存重量"},{drawCellBULK,12,0,&inv->prod.weight}},
-								{{drawCellStr,12,0,"库存数量"},{drawCellUNIT,12,0,&inv->prod.quantity}},
-								{{drawCellStr,12,0,"销售单价"},{drawCellDouble,valWidth,0,&inv->prod.unitPrice}}
-	};
-	drawColorBar(renderer, cur, 238, 232, 213, InvDetailsRectSize.y);
-	drawListItem(renderer, cur, cellName[0], 2);
-	cur.x++;
-	showProductDetails(renderer, cur, &inv->prod, 1); cur.x += ProdDetailsRectSize.x;
+	CellDataDrawer packDrawer = NULL;
+	void* qw = NULL;
 	if (inv->prod.pack == BULK) {
-		drawColorBar(renderer, cur, 238, 232, 213, InvDetailsRectSize.y);
-		drawListItem(renderer, cur, cellName[1], 2);
+		packDrawer = drawCellBULK;
+		qw = &inv->prod.weight;
 	}
 	else if (inv->prod.pack == UNIT) {
-		drawColorBar(renderer, cur, 238, 232, 213, InvDetailsRectSize.y);
-		drawListItem(renderer, cur, cellName[2], 2);
+		packDrawer = drawCellUNIT;
+		qw = &inv->prod.quantity;
 	}
-	cur.x++;
-	resetBackgroundColor(renderer);
-	drawListItem(renderer, cur, cellName[3], 2);
+	CellData cellName[3][2] = { {{drawCellStr,12,0,"商品ID"},{drawCellInt,valWidth,0,&inv->invID}},
+								{{drawCellStr,12,0,"库存量"},{packDrawer,12,0,qw}},
+								{{drawCellStr,12,0,"销售单价"},{drawCellDouble,valWidth,0,&inv->prod.unitPrice}}
+	};
+	for (int i = 0, line = 0; i < 3; i++) {
+		if (i == 1) {
+			showProductDetails(renderer, cur, &inv->prod, line);
+			cur.x += ProdDetailsRectSize.x;
+			line += ProdDetailsRectSize.x;
+		}
+		if (line % 2) drawColorBar(renderer, cur, 238, 232, 213, InvDetailsRectSize.y);
+		else resetBackgroundColor(renderer);
+		drawListItem(renderer, cur, cellName[i], 2);
+		cur.x++, line++;
+	}
 }
 static const Coord SSPDetailsRectSize = { 18,53 };
 void showSSPDetails(Renderer* renderer, Coord pos, SSP* ssp) {
@@ -1129,9 +1134,9 @@ void showRecordDetails(Renderer* renderer, Coord pos, Record* rec) {
 	{ {{drawCellStr,12,0,"记录ID"},{drawCellInt,12,0,&rec->recID}},
 	  {{drawCellStr,12,0,"商品ID"},{drawCellInt,12,0,&rec->invID}},
 	  {{drawCellStr,12,0,"类型"},{drawCellStr,12,0,&recordType[rec->type]}},
-	  {{drawCellStr,12,0,"记录时间"},{drawCellDate,12,0,&rec->time}},
+	  {{drawCellStr,12,0,"记录时间"},{drawCellTime,12,0,&rec->time}},
 	  {{drawCellStr,12,0,&typeQuantityText[rec->type]},{packDrawer,12,0,qw}},
-	  {{drawCellStr,12,0,&typeUpriceText[rec->type]},{drawCellDouble,12,0,&rec->prod.purUPrice}},
+	  {{drawCellStr,12,0,&typeUpriceText[rec->type]},{drawCellDouble,12,0,&rec->prod.unitPrice}},
 	  {{drawCellStr,12,0,&typeAmountText[rec->type]},{drawCellDouble,12,0,&rec->prod.amount}},
 	  {{drawCellStr,12,0,"附加信息"},{drawCellStr,12,0,&rec->addInfo}}
 	};
