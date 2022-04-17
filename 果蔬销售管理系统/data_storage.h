@@ -16,7 +16,7 @@ static const char SALE_PLAN_FILENAME[30] = "sale_plan.dat";
 int storageStat(char storageDir[]);
 void storageCreate(char storageDir[]);
 FVMO* storageLoadFVMO(char storageDir[]);
-int storageSaveFVMO(FVMO* gdata);
+int storageSaveFVMO(char storageDir[],FVMO* gdata);
 Inventory* storageLoadInventory(char filename[]);
 int storageSaveInventory(char filename[], Inventory* head);
 Record* storageLoadRecord(char filename[], Inventory* invHead);

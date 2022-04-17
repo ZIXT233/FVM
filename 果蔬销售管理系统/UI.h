@@ -64,6 +64,8 @@ void drawRecordList(Renderer* renderer, Coord origin, ListHead* entry, int pageS
 
 static const Coord  PreOrderRectSize = { 18,126 };
 void drawPreOrderList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
+static const Coord InvCheckRectSize = { 18,146 };
+void drawInvCheckList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
 
 
 void showProductDetails(Product* prod);

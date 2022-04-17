@@ -1,5 +1,6 @@
 #include<string.h>
 #include"record.h"
+#include"inventory.h"
 
 
 Record* recordCreate() {
@@ -22,27 +23,18 @@ Record* recordListInit(Record* head) {
 	return head;
 }
 
-void recordListClear(Record* head) {
+void recordListClear(Record* head) { //不提供INV_RECORDS方向的删除：INV_REOCORD链方向不分配内存，元素内存都由所属TIME_REOCRDS链管理
 	listForEachEntrySafe(Record, pos, &head->timeList, timeList) {
 		recordDel(pos);
 	}
 }
 Record* recordQueryID(Record* head, int recID, int direct) {
-	if (direct == 0) {
-		listForEachEntry(Record, pos, &head->timeList, timeList) {
-			if (pos->recID == recID) {
-				return pos;
-			}
+	recordForEachStart(pos, head, direct) {
+		if (pos->recID == recID) {
+			return pos;
 		}
-	}
-	else if (direct = 1) {
-		listForEachEntry(Record, pos, &head->IRList, IRList) {
-			if (pos->recID == recID) {
-				return pos;
-			}
-		}
-	}
-	return NULL;
+	}recordForEachEnd(pos, head, direct)
+		return NULL;
 }
 
 int recordMatch(const Record* rec, const Record* filter) {
@@ -54,7 +46,7 @@ int recordMatch(const Record* rec, const Record* filter) {
 	return 1;
 }
 
-Record* recordFilterListGen(const Record* head, int type,const Record* filter) {
+Record* recordFilterListGen(const Record* head, int type, const Record* filter) {
 	Record* filterList = recordListInit(recordCreate()), * cp;
 	if (type == TIME_RECORDS) {
 		listForEachEntry(Record, pos, &head->timeList, timeList) {
@@ -75,7 +67,7 @@ Record* recordFilterListGen(const Record* head, int type,const Record* filter) {
 	return filterList;
 }
 
-Record* recordShowPageJump(const Record* head,int type, int* pageStart, const int pageSize) {
+Record* recordShowPageJump(const Record* head, int type, int* pageStart, const int pageSize) {
 	Record* showPage = head;
 	while (1) {
 		int num = 1;
@@ -87,8 +79,9 @@ Record* recordShowPageJump(const Record* head,int type, int* pageStart, const in
 				}
 				num++;
 			}
-		}else if (type == INV_RECORDS) {
-			listForEachEntry(Record, pos, &head->IRList,IRList ) {
+		}
+		else if (type == INV_RECORDS) {
+			listForEachEntry(Record, pos, &head->IRList, IRList) {
 				if (num == *pageStart) {
 					showPage = recordEntry(pos->IRList.prev, IRList);
 					break;
@@ -101,7 +94,7 @@ Record* recordShowPageJump(const Record* head,int type, int* pageStart, const in
 	}
 }
 
-Finance recordFinanceOpt(const Record* rec,Finance finance) {
+Finance recordFinanceOpt(const Record* rec, Finance finance) {
 	switch (rec->type)
 	{
 	case PURCHASE:
@@ -123,51 +116,31 @@ Finance recordFinanceOpt(const Record* rec,Finance finance) {
 	return finance;
 }
 
-void recordStatsWeight(const Record *head, int type, const Record* filter, double weightTable[]) {
+void recordStatsWeight(const Record* head, int type, const Record* filter, double weightTable[]) {
 	for (int i = 1; i <= RecordTypeNum; i++) weightTable[i] = 0;
-	if (type == TIME_RECORDS) {
+	recordForEachStart(pos, head, type) {
 		listForEachEntry(Record, pos, &head->timeList, timeList) {
 			if (!recordMatch(pos, filter)) continue;
 			weightTable[pos->type] += recordTypeProdDirect[pos->type] * pos->prod.weight;
 		}
-	}
-	else if (type == INV_RECORDS) {
-		listForEachEntry(Record, pos, &head->IRList, IRList) {
-			if (!recordMatch(pos, filter)) continue;
-			weightTable[pos->type] += recordTypeProdDirect[pos->type] * pos->prod.weight;
-		}
-	}
+	}recordForEachEnd(pos, head, type)
 }
 
 void recordStatsQuantity(const Record* head, int type, const Record* filter, int quantityTable[]) {
 	for (int i = 1; i <= RecordTypeNum; i++) quantityTable[i] = 0;
-	if (type == TIME_RECORDS) {
-		listForEachEntry(Record, pos, &head->timeList, timeList) {
-			if (!recordMatch(pos, filter)) continue;
-			quantityTable[pos->type] += recordTypeProdDirect[pos->type] * pos->prod.quantity;
-		}
-	}
-	else if (type == INV_RECORDS) {
+	recordForEachStart(pos, head, type) {
 		listForEachEntry(Record, pos, &head->IRList, IRList) {
 			if (!recordMatch(pos, filter)) continue;
 			quantityTable[pos->type] += recordTypeProdDirect[pos->type] * pos->prod.quantity;
 		}
-	}
+	}recordForEachEnd(pos, head, type)
 }
-Finance recordStatsFinance(const Record* head, int type,const Record* filter, double startUpCapital) {
+Finance recordStatsFinance(const Record* head, int type, const Record* filter, double startUpCapital) {
 	Finance finance;
-	financeInit(&finance,startUpCapital);
-	if(type==TIME_RECORDS){
-		listForEachEntry(Record, pos, &head->timeList, timeList) {
-			if(!recordMatch(pos,filter)) continue;
-			finance = recordFinanceOpt(pos, finance);
-		}
-	}
-	else if (type == INV_RECORDS) {
-		listForEachEntry(Record, pos, &head->IRList, IRList) {
-			if (!recordMatch(pos,filter)) continue;
-			finance = recordFinanceOpt(pos, finance);
-		}
-	}
-	return finance;
+	financeInit(&finance, startUpCapital);
+	recordForEachStart(pos, head, type) {
+		if (!recordMatch(pos, filter)) continue;
+		finance = recordFinanceOpt(pos, finance);
+	}recordForEachEnd(pos, head, type)
+		return finance;
 }

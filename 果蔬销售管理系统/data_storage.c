@@ -94,7 +94,7 @@ int storageLoadConfig(char filename[], FVMO* fvmo) {
 }
 int storageSaveConfig(char filename[], FVMO* fvmo) {
 	FILE* cfgFile;
-	fopen_s(&cfgFile, filename, "rb");
+	fopen_s(&cfgFile, filename, "wb");
 	if (!cfgFile) return -1;
 
 	fwrite(fvmo->timer, sizeof(FVMTimer), 1, cfgFile);

@@ -567,7 +567,7 @@ void sale(FVMO gdata) {
 	while (1) {
 		renderClear(gdata.renderer);
 		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
-		drawListPage(gdata.renderer, cartPos, "购物车", drawInvList, &cart->list, &pageStart, PageSize, invListRectSize, NULL);
+		drawListPage(gdata.renderer, cartPos, "购物车", drawInvList, &cart->list, &cartPageStart, PageSize, invListRectSize, NULL);
 		drawMenu(gdata.renderer, cartMenuPos, "购物车", 5, 11,
 			"上一页",
 			"下一页",
@@ -581,7 +581,7 @@ void sale(FVMO gdata) {
 			free(filterList);
 		}
 		else {
-			drawListPage(gdata.renderer, invListPos, "筛选信息", drawInvList, &gdata.inventory->list, &pageStart, PageSize, invListRectSize, NULL);
+			drawListPage(gdata.renderer, invListPos, "库存信息", drawInvList, &gdata.inventory->list, &pageStart, PageSize, invListRectSize, NULL);
 		}
 		drawMenu(gdata.renderer, saleMenuPos, "商品销售", 7, 1,
 			"上一页",

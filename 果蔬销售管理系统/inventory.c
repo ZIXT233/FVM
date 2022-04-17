@@ -1,5 +1,6 @@
 #include<stdlib.h>
 #include<string.h>
+#include<stdio.h>
 #include"list.h"
 #include"inventory.h"
 
@@ -72,4 +73,39 @@ Inventory* invShowPageJump(const Inventory* head, int* pageStart, const int page
 		if (showPage != head || *pageStart == 1) return showPage;
 		else *pageStart -= pageSize;
 	}
+}
+
+int invRecCheck(const Inventory* inv, char* errmsg) {
+	int quantity = 0;
+	double weight = 0;
+	listForEachEntry(Record, pos, &inv->invRecord->IRList, IRList) {
+		if (!productMatch(&pos->prod, &inv->prod)) {
+			strcpy_s(errmsg, INV_CHECK_MSG_MAX, "记录商品属性与库存商品属性不符");
+			return pos->recID;
+		}
+		if (pos->prod.pack == BULK) {
+			weight += recordTypeProdDirect[pos->type] * pos->prod.weight;
+			if (weight < 0) {
+				strcpy_s(errmsg, INV_CHECK_MSG_MAX, "依此记录，商品库存为负");
+				return pos->recID;
+			}
+		}
+		else if (pos->prod.pack == UNIT) {
+			quantity += recordTypeProdDirect[pos->type] * pos->prod.quantity;
+			if (quantity < 0) {
+				strcpy_s(errmsg, INV_CHECK_MSG_MAX, "依此记录，商品库存为负");
+				return pos->recID;
+			}
+		}
+	}
+	if (inv->prod.pack == BULK && weight != inv->prod.weight) {
+
+		sprintf_s(errmsg, INV_CHECK_MSG_MAX, "商品现有库存量与记录不符,依照记录为%.2lf 斤", weight);
+		return INV_CHECK_REC_NO_MATCH;
+	}
+	else if (inv->prod.pack == UNIT && quantity != inv->prod.quantity) {
+		sprintf_s(errmsg, INV_CHECK_MSG_MAX, "商品现有库存量与记录不符,依照记录为%d 个", quantity);
+		return INV_CHECK_REC_NO_MATCH;
+	}
+	return INV_CHECK_CORRECT;
 }

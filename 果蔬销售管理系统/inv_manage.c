@@ -287,7 +287,7 @@ void recordPage(FVMO gdata) {
 		case 6:
 			num = getSelect();
 			listForEachSafe(pos, &gdata.record->timeList) {
-				if (num == (rec = recordEntry(pos, timeList))->invID) {
+				if (num == (rec = recordEntry(pos, timeList))->recID) {
 					listRemove(pos);
 					listRemove(&rec->IRList);
 					recordDel(rec);
@@ -375,7 +375,7 @@ void invRecordPage(Record* invRecord,FVMO gdata) {
 		case 5:
 			num = getSelect();
 			listForEachSafe(pos, &invRecord->IRList) {
-				if (num == (rec = recordEntry(pos, IRList))->invID) {
+				if (num == (rec = recordEntry(pos, IRList))->recID) {
 					listRemove(pos);
 					listRemove(&rec->timeList);
 					recordDel(rec);

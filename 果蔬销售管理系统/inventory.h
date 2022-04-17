@@ -27,4 +27,8 @@ void invListClear(Inventory* head);
 Inventory* invQueryID(Inventory* head, int invID);
 Inventory* invFilterListGen(const Inventory* head, const Product* filter);
 Inventory* invShowPageJump(const Inventory* head, int* pageStart, const int pageSize);
+#define INV_CHECK_MSG_MAX 100
+#define INV_CHECK_REC_NO_MATCH -1
+#define INV_CHECK_CORRECT 0
+int invRecCheck(const Inventory* inv, char* errmsg);
 #endif // !INVENTORY_H

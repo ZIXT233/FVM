@@ -182,7 +182,7 @@ void drawRecordList(Renderer* renderer, Coord origin, ListHead* entry, int pageS
 	drawColorBar(renderer, cur, 238, 232, 213, RecordRectSize.y);
 	drawListItem(renderer, cur, cellName, 8);
 	cur.x++;
-	recordForEachStart(pos, type, entry) {
+	recordForEachStart(pos, start, type) {
 		if (n == pageSize) break;
 		if (pos->prod.pack == BULK) {
 			weight = pos->prod.weight * recordTypeProdDirect[pos->type];
@@ -209,9 +209,44 @@ void drawRecordList(Renderer* renderer, Coord origin, ListHead* entry, int pageS
 
 		cur.x++;
 		n++;
-	}recordForEachEnd(pos, type, entry)
+	}recordForEachEnd(pos, start, type)
 }
 
+
+void drawInvCheckList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg) {
+	Record* start = recordEntry(entry,timeList);
+	Coord cur = origin;
+	int n = 0;
+	void* qw = NULL;
+	CellDataDrawer packDrawer = NULL;
+
+	CellData cellName[6] = { {drawCellStr,12,0,"种类"} ,{drawCellStr,12,0,"品种"},{drawCellStr,10,0,"商品ID"},{drawCellStr,17,0,"出错位置(记录ID)"},
+							  {drawCellStr,65,0,"错误信息"},{drawCellStr,12,0,"商品库存量"} };
+	drawColorBar(renderer, cur, 238, 232, 213, InvCheckRectSize.y);
+	drawListItem(renderer, cur, cellName, 6);
+	cur.x++;
+	listForEachEntry(Record, pos, &start->timeList, timeList) {
+		if (n == pageSize) break;
+		if (pos->prod.pack == BULK) {
+			qw = &pos->prod.weight;
+			packDrawer = drawCellBULK;
+		}
+		else if (pos->prod.pack == UNIT) {
+			qw = &pos->prod.quantity;
+			packDrawer = drawCellUNIT;
+		}
+		CellData cellData[6] = { {drawCellStr,12,0,pos->prod.kind},{drawCellStr,12,0,pos->prod.variety},{drawCellInt,10,0,&pos->invID},
+								  (pos->recID!=-1)?(CellData){drawCellInt,17,0,&pos->recID}:(CellData){drawCellStr,17,0," -"},
+									{drawCellStr,65,0,pos->addInfo},{packDrawer,12,0,qw} };
+
+
+		if (n & 1)drawColorBar(renderer, cur, 238, 232, 213, InvCheckRectSize.y);
+		else resetBackgroundColor(renderer);
+		drawListItem(renderer, cur, cellData, 6);
+		cur.x++;
+		n++;
+	}
+}
 void drawListPage(Renderer* renderer, Coord origin, const char* title, ListDrawer drawer, ListHead* start, int* pageStartNum, int pageSize, Coord rectSize, void* exArg) {
 	Coord titleRect;
 	titleRect.x = 1;
@@ -347,7 +382,7 @@ void drawPreOrderList(Renderer* renderer, Coord origin, ListHead* entry, int pag
 		if (pos->type == GIFT) {
 			cellData[7] = (CellData){ drawCellStr,7,0,"赠品" };
 			if (n & 1)drawColorBar(renderer, cur, 130, 200, 150, PreOrderRectSize.y);
-			else drawColorBar(renderer, cur,160,220,170, PreOrderRectSize.y);
+			else drawColorBar(renderer, cur, 160, 220, 170, PreOrderRectSize.y);
 		}
 		else {
 			if (n & 1)drawColorBar(renderer, cur, 238, 232, 213, PreOrderRectSize.y);
@@ -357,10 +392,6 @@ void drawPreOrderList(Renderer* renderer, Coord origin, ListHead* entry, int pag
 		cur.x++;
 		n++;
 	}
-	while (n++ != pageSize) origin.x++;
-	origin.y--;
-	origin.x++;
-	setCursorPos(renderer, origin);
 }
 
 
