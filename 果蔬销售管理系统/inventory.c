@@ -90,7 +90,7 @@ int invRecCheck(const Inventory* inv, char* errmsg) {
 					return pos->recID;
 				}
 			}
-			else {
+			else if (pos->type != UPDATE) {
 				if (!fEqual(pos->prod.weight * pos->prod.unitPrice, pos->prod.amount)) {
 					strcpy_s(errmsg, INV_CHECK_MSG_MAX, "此记录金额信息不正确");
 					return pos->recID;
@@ -109,7 +109,7 @@ int invRecCheck(const Inventory* inv, char* errmsg) {
 					return pos->recID;
 				}
 			}
-			else {
+			else if(pos->type!=UPDATE){
 				if (pos->prod.quantity * pos->prod.unitPrice!= pos->prod.amount) {
 					strcpy_s(errmsg, INV_CHECK_MSG_MAX, "此记录金额信息不正确");
 					return pos->recID;

@@ -106,7 +106,8 @@ Finance recordFinanceOpt(const Record* rec, Finance finance) {
 	case GIFT:
 		financeIncome(&finance, rec->prod.amount);
 		break;
-	case UPDATE:
+	case UPDATE: //更新记录的金额变化只有退货
+		financeIncome(&finance, rec->prod.amount);
 		break;
 	case DESTROY:
 		break;
