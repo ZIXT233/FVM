@@ -932,6 +932,7 @@ void sale(FVMO gdata) {
 			else {
 				isMember = 1;
 			}
+			break;
 		case 16:
 			cartClear(cart);
 			break;

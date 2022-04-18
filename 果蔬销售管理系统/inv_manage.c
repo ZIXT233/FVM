@@ -479,7 +479,7 @@ void recordReplace(FVMO gdata) {
 		Record tmp;
 		memset(&tmp, 0, sizeof(Record));
 		drawOrdMenu("记录类型:", 5, 1, "进货记录", "销售记录", "更新记录", "赠予记录", "销毁记录");
-		breakDeliver(getUIntInput("选择记录类型 : ", &tmp.type, (IntRange) { 1, 4 }, true));
+		breakDeliver(getUIntInput("选择记录类型 : ", &tmp.type, (IntRange) { 1, 5 }, true));
 		printf("输入对应的商品ID:\n");
 		breakDeliver(inputInventoryIDHistory(gdata.inventory, gdata.historyInventory, &invID, &inv));
 		tmp.prod = inv->prod;
