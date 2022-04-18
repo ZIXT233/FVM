@@ -11,6 +11,7 @@ void recordPage(FVMO gdata);
 void invRecordPage(Record* invRecord,FVMO gdata);
 void recDetails(Record* record,FVMO gdata);
 void randomPurchase(FVMO gdata);
+void invDestroyManage(FVMO gdata);
 
 
 #endif

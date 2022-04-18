@@ -96,7 +96,9 @@ int inputProduct(Product* prod);
 int inputGift(Inventory ** pGift, Inventory * invHead);
 int inputProductFilter(Product* prod);
 int inputRecordFilter(Record* rec);
+int inputSaleRecordFilter(Record* rec);
 int inputInventoryID(const Inventory* head, int* id, Inventory** pInv);
+int inputInventoryIDHistory(const Inventory* head, const Inventory* historyHead, int* id, Inventory** pInv);
 int inputRecordID(const Record* head, int recordType, int* id, Record** pRec);
 int inputSSPID(const SSP * head, int* id, SSP * *pSSP);
 int inputCSPID(const CSP * head, int* id, CSP * *pCSP);
@@ -104,4 +106,5 @@ int getUIntInput(const char* query, int* value, IntRange range, bool strict);
 int getStrInput(const char* query, char* value, int maxCount, bool strict);
 int getDoubleInput(const char* query, double* value, DoubleRange range, bool strict);
 int getDateTime(const char* query, time_t* value, bool strict); //默认为当天00:00
+int getTimeInput(const char* query, time_t* value, bool strict);
 #endif

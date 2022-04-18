@@ -10,7 +10,7 @@ typedef struct tagProduct {
 	char kind[INFOMAX];
 	char variety[INFOMAX];
 	time_t expiration;
-	int quality;
+	enum Quality {GOOD=1,NORMAL,BAD} quality;
 	enum Packing { BULK = 1, UNIT } pack;
 	//Product status
 	int quantity;
@@ -19,6 +19,10 @@ typedef struct tagProduct {
 	double unitPrice;
 	double purUPrice;  //仅在获取进货输入时使用，进货记录中的 unitPrice等价purUPrice，在其他信息中无意义
 } Product;
+
+static char qualityText[5][20] = { "","优","良","差" };
+static char packText[3][20] = { "","散装","单元装" };
+
 
 typedef struct tagIntRange {
 	int min, max;
@@ -39,6 +43,7 @@ static inline int productMatch(const Product* inv, const Product* filter) {
 	if (filter->expiration != TIME_NAN && filter->expiration < inv->expiration) return 0;
 	return 1;
 }
+
 
 static inline bool fEqual(double a, double b) {
 	return fabs(a - b) < EPS;

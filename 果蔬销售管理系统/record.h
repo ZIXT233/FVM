@@ -21,7 +21,11 @@ typedef struct tagRecord {
 	time_t lastTime;  //used as filter
 }Record;
 static const int recordTypeProdDirect[6] = { 0,1,-1,1,-1,-1 };
-static const int recordTypeFinanceDirect[6] = { 0,-1,1,0,1,0 };
+static const int recordTypeFinanceDirect[6] = { 0,-1,1,1,1,0 };
+static char recordType[6][20] = { "","进货记录","销售记录","更新记录","赠送记录","销毁记录" };
+static char typeQuantityText[6][20] = { "","采购量","销售量","变化量","赠予量","销毁量"};
+static char typeAmountText[6][20] = { "","采购总额","销售总额","总价变化","赠品额外收费",""};
+static char typeUpriceText[6][20] = { "","采购单价","销售单价","售价变化","赠品额外单价",""};
 
 static const int RecordTypeNum = 5;
 static const int RecordIDBase = 0000;
@@ -47,12 +51,17 @@ Finance recordStatsFinance(const Record* head, int type, const Record* filter, d
 #define recordForEachStart(pos,head,recordType) {\
 	Record* pos=NULL;\
 	if (recordType == TIME_RECORDS) {\
-		pos = recordEntry(head->timeList.next, timeList);\
+		pos = recordEntry(&head->timeList, timeList);\
 	}\
 	else if (recordType == INV_RECORDS) {\
-		pos = recordEntry(head->IRList.next, IRList);\
+		pos = recordEntry(&head->IRList, IRList);\
 	}\
 	while (1){\
+		if (recordType == TIME_RECORDS) {\
+			pos = recordEntry(pos->timeList.next, timeList);\
+		} else if (recordType == INV_RECORDS) {\
+			pos = recordEntry(pos->IRList.next, IRList);\
+		}\
 		if (recordType == TIME_RECORDS) {\
 			if (&pos->timeList == head->timeList.root) break;\
 		}\
@@ -61,13 +70,6 @@ Finance recordStatsFinance(const Record* head, int type, const Record* filter, d
 		}
 
 
-#define recordForEachEnd(pos,head,recordType) \
-		if (recordType == TIME_RECORDS) {\
-			pos = recordEntry(pos->timeList.next, timeList);\
-		} else if (recordType == INV_RECORDS) {\
-			pos = recordEntry(pos->IRList.next, IRList);\
-		}\
-	}\
-}
+#define recordForEachEnd }}
 
 #endif // !RECORD_H

@@ -47,6 +47,7 @@ FVMO* FVMSystemInit() {
 		if (!gdata->SSP) gdata->SSP = SSPListInit(SSPCreate());
 		if (!gdata->CSP) gdata->CSP = CSPListInit(CSPCreate());
 	}
+	gdata->historyInventory = invListInit(invCreate());
 	gdata->finance = financeInit(financeCreate(),100000);
 	gdata->order = recordListInit(recordCreate());
 	gdata->renderer = rendererCreate(50000);
@@ -74,11 +75,11 @@ int main(void) {
 //金额宽度>=17
 //config保存
 //商品信息更新 *
-//记录更新  
+//记录更新  *
 //密码
-//商品下架
-//退换货
+//商品下架 *
+//退换货 *
 //会员优惠节日优惠
-//目录大小
+//菜单大小
 //时间模块修改
 //prod中添加单位名

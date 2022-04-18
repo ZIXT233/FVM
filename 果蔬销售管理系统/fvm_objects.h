@@ -38,7 +38,7 @@ static inline void pageStackPop(PageStack* head) {
 }
 
 typedef struct tagFVMObjects {  //Store system's global data
-	Inventory* inventory;
+	Inventory* inventory,*historyInventory;
 	Record* record,*order;
 	SingleSalePlan* SSP;
 	ComSalePlan* CSP;

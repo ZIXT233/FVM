@@ -221,7 +221,7 @@ int settleProc(FVMO gdata, Record* preOrder) {
 	ti = FVMTimerGetFVMTime(gdata.timer);
 	listForEachEntrySafe(Record, pos, &preOrder->timeList, timeList) {
 		pos->time = ti;
-		pos->prod.amount = centRound(pos->prod.amount*pos->discount);
+		pos->prod.amount = centRound(pos->prod.amount * pos->discount);
 		listAddTail(&preOrder->IRList, &gdata.order->IRList);
 		recordIDAllocate(preOrder, gdata.order);
 
@@ -234,7 +234,7 @@ int settleProc(FVMO gdata, Record* preOrder) {
 		//处理库存
 		inv = invQueryID(gdata.inventory, pos->invID);
 		inv->prod.quantity -= pos->prod.quantity;
-		inv->prod.weight = centRound(inv->prod.weight-pos->prod.weight);
+		inv->prod.weight = centRound(inv->prod.weight - pos->prod.weight);
 
 		//添加记录
 		rec = recordCreate();
@@ -389,7 +389,7 @@ int giftSelect(FVMO gdata, Record* preOrder) {
 			drawListPage(gdata.renderer, SSPGiftPos, csp->planName, drawGiftList, &csp->optGifts->list, &giftPageStart, PageSize, GiftRectSize, &gdata);
 		}
 		else {
-			drawTitleWindow(gdata.renderer, SSPGiftPos,"已无可选赠品", GiftRectSize);
+			drawTitleWindow(gdata.renderer, SSPGiftPos, "已无可选赠品", GiftRectSize);
 		}
 		drawMenu(gdata.renderer, SalePlanMenu, "赠品选择", 6, 1,
 			"订单上一页",
@@ -579,6 +579,213 @@ int salePlanSelect(FVMO gdata, Inventory* cart) {
 	//5.列出可选礼品
 	//6.结算，生成订单
 }
+
+void saleReturn(FVMO gdata) {  
+	int recID;
+	int select;
+	Record* rec;
+	do {
+		breakDeliver(inputRecordID(gdata.record, TIME_RECORDS, &recID, &rec));
+	} while (rec->type != SALE);
+	if (strcmp(rec->addInfo, "已退货")==0) {
+		printf("该商品已退货\n");
+		getchar();
+		return;
+	}
+	Inventory* inv = invQueryID(gdata.inventory, rec->invID);
+	if (!inv) {
+		invQueryID(gdata.historyInventory, rec->invID);
+		if (!inv) return;
+		drawOrdMenu("退货商品已下架，是否重新上架?", 2, 1, "是", "否");
+		breakDeliver(getUIntInput("选择一项:", &select, (IntRange) { 1, 2 }, true));
+		if (select == 1) {
+			listRemove(&inv->list);
+			listAddTail(&inv->list, &gdata.inventory->list);
+		}
+	}
+
+	Record* updateRecord = recordCreate();
+	updateRecord->type = UPDATE;
+	strcpy_s(rec->addInfo, INFOMAX, "已退货");
+	sprintf_s(updateRecord->addInfo, INFOMAX, "退货,对应销售记录:%d",rec->recID);
+	updateRecord->time = FVMTimerGetFVMTime(gdata.timer);
+	updateRecord->invID = inv->invID;
+	updateRecord->prod = rec->prod;
+	if (rec->prod.pack == BULK) {
+		updateRecord->prod.weight = rec->prod.weight;
+		inv->prod.weight = centRound(inv->prod.weight + rec->prod.weight);
+	}
+	else if (rec->prod.pack == UNIT) {
+		updateRecord->prod.quantity = rec->prod.quantity;
+		inv->prod.quantity += rec->prod.quantity;
+	}
+	updateRecord->prod.unitPrice = 0;   //价格改变0
+	updateRecord->prod.amount = -rec->prod.amount;
+	financeExpend(gdata.finance, rec->prod.amount); //退钱
+
+	recordIDAllocate(updateRecord, gdata.record);
+	listAddTail(&updateRecord->timeList, &gdata.record->timeList);
+	listAddTail(&updateRecord->IRList, &inv->invRecord->IRList);
+	printf("成功退货\n");
+	getchar();
+}
+
+void saleExchange(FVMO gdata) {
+	int recID;
+	int select;
+	bool destroy = false;
+	Record* rec;
+	do {
+		breakDeliver(inputRecordID(gdata.record, TIME_RECORDS, &recID, &rec));
+	} while (rec->type != SALE);
+	if (strcmp(rec->addInfo, "已换货")==0) {
+		printf("该商品已换货\n");
+		getchar();
+		return;
+	}
+	
+	Inventory* inv = invQueryID(gdata.inventory, rec->invID);
+	if (!inv) {
+		invQueryID(gdata.historyInventory, rec->invID);
+		if (!inv) return;
+		printf("换货商品已下架");
+		getchar();
+		return;
+	}
+	if (inv->prod.pack==BULK) {
+		if (fLess(inv->prod.weight, rec->prod.weight)) {
+			printf("库存不足");
+			getchar();
+		}
+	}
+	else if (inv->prod.pack = UNIT) {
+		if(inv->prod.quantity<rec->prod.quantity) {
+			printf("库存不足");
+			getchar();
+		}
+	}
+	drawOrdMenu("是否丢弃回退商品?", 2, 1, "是", "否");
+	breakDeliver(getUIntInput("选择一项:", &select, (IntRange) { 1, 2 }, true));
+	if (select==1) destroy = true;
+	Record* updateRecord = recordCreate();
+	updateRecord->type = UPDATE;
+	strcpy_s(rec->addInfo, INFOMAX, "已换货");
+	sprintf_s(updateRecord->addInfo, INFOMAX, "换货,对应销售记录:%d", rec->recID);
+	updateRecord->time = FVMTimerGetFVMTime(gdata.timer);
+	updateRecord->invID = inv->invID;
+	updateRecord->prod = rec->prod;
+	if (destroy) {
+		if (rec->prod.pack == BULK) {
+			updateRecord->prod.weight = -rec->prod.weight;
+			inv->prod.weight = centRound(inv->prod.weight - rec->prod.weight);
+		}
+		else if (rec->prod.pack == UNIT) {
+			updateRecord->prod.quantity = -rec->prod.quantity;
+			inv->prod.quantity -= rec->prod.quantity;
+		}
+	}
+	else {
+		updateRecord->prod.weight = updateRecord->prod.quantity=0;
+	}
+	updateRecord->prod.unitPrice = 0;   //价格改变0
+	updateRecord->prod.amount = 0;
+	recordIDAllocate(updateRecord, gdata.record);
+	listAddTail(&updateRecord->timeList, &gdata.record->timeList);
+	listAddTail(&updateRecord->IRList, &inv->invRecord->IRList);
+	printf("成功换货\n");
+	getchar();
+}
+static const Coord SaleRecordPos = { 2,3 };
+void saleReturnExchangePage(FVMO gdata) {
+	int inCustomFilter = 0, inInvRecord = 0;
+	int pageStart = 1, pageStartSave = 1;
+	char filterOpt[2][20] = { "记录筛选","取消筛选" };
+	char invRecordOpt[2][20] = { "指定商品","取消指定商品" };
+	Record* filterList = NULL, * invRecord = NULL;
+	int select, num;
+
+	Record filter, saleFilter;
+	memset(&saleFilter, 0, sizeof(Record));
+	saleFilter.type = SALE;
+	saleFilter.time = saleFilter.lastTime = saleFilter.prod.expiration = TIME_NAN;
+	filter = saleFilter;
+
+	Inventory* inv = NULL;
+	Record* rec = NULL;
+	const int timeRec = TIME_RECORDS, invRec = INV_RECORDS;
+	pageStackPush(pageStackCreate("仓管记录"), gdata.pageStack);
+	while (1) {
+		renderClear(gdata.renderer);
+		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
+		if (inInvRecord) {
+			filterList = recordFilterListGen(invRecord, INV_RECORDS, &filter);
+			drawListPage(gdata.renderer, SaleRecordPos, "商品销售记录", drawRecordList, &filterList->IRList, &pageStart, PageSize, RecordRectSize, &invRec);
+		}
+		else {
+			filterList = recordFilterListGen(gdata.record, TIME_RECORDS, &filter);
+			drawListPage(gdata.renderer, SaleRecordPos, "销售记录", drawRecordList, &filterList->timeList, &pageStart, PageSize, RecordRectSize, &timeRec);
+		}
+		recordListClear(filterList);
+		free(filterList);
+
+		drawMenu(gdata.renderer, invMenuPos, "商品退换", 7, 1,
+			"上一页",
+			"下一页",
+			filterOpt[inCustomFilter],
+			invRecordOpt[inInvRecord],
+			"商品退货",
+			"商品换货",
+			"退出");
+		inputStart(gdata.renderer, INPUT_ORIGIN);
+		renderPresent(gdata.renderer);
+		select = getSelect();
+		switch (select)
+		{
+		case 1:
+			pageStart -= PageSize;
+			if (pageStart < 1) pageStart = 1;
+			break;
+		case 2:
+			pageStart += PageSize;
+			break;
+		case 3:
+			if (inCustomFilter) {  //取消筛选
+				inCustomFilter = 0;
+				filter = saleFilter;
+				pageStart = pageStartSave;
+			}
+			else {
+				breakCatch(inputSaleRecordFilter(&filter)) {
+					break;
+				}
+				inCustomFilter = 1;
+				pageStartSave = pageStart;
+				pageStart = 1;
+			}
+			break;
+		case 4:
+			if (inInvRecord) {
+				inInvRecord = 0;
+			}
+			else {
+				breakCatch(inputInventoryID(gdata.inventory, &num, &inv)) break;
+				invRecord = inv->invRecord;
+				inInvRecord = 1;
+			}
+			break;
+		case 5:
+			saleReturn(gdata);
+			break;
+		case 6:
+			saleExchange(gdata);
+			break;
+		case 7:
+			pageStackPop(gdata.pageStack);
+			return;
+		}
+
+	}
+}
 void sale(FVMO gdata) {
 	int inFilter = 0;
 	int pageStart = 1, pageStartSave = 1, cartPageStart = 1;
@@ -606,13 +813,14 @@ void sale(FVMO gdata) {
 		else {
 			drawListPage(gdata.renderer, invListPos, "库存信息", drawInvList, &gdata.inventory->list, &pageStart, PageSize, invListRectSize, NULL);
 		}
-		drawMenu(gdata.renderer, saleMenuPos, "商品销售", 7, 1,
+		drawMenu(gdata.renderer, saleMenuPos, "商品销售", 8, 1,
 			"上一页",
 			"下一页",
 			filterOpt[inFilter],
 			"商品详情",
 			"加入购物车",
 			"前往结算",
+			"商品退换",
 			"退出");
 		inputStart(gdata.renderer, INPUT_ORIGIN);
 		renderPresent(gdata.renderer);
@@ -655,6 +863,9 @@ void sale(FVMO gdata) {
 			}
 			break;
 		case 7:
+			saleReturnExchangePage(gdata);
+			break;
+		case 8:
 			invListClear(cart);
 			invDel(cart);
 			pageStackPop(gdata.pageStack);

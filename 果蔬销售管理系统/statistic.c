@@ -1,7 +1,8 @@
 #include"statistics.h"
+#include"inv_manage.h"
 static const Coord StatsPageMenuPos = { 3,3 };
 static const Coord statsPos = { 2,3 }, statsMenuPos = { 25,3 };
-static const Coord InvCheckPos = { 2,3 }, financeCheckPos = { 22,4 },statsCheckMenuPos = { 25,3 };
+static const Coord InvCheckPos = { 2,3 }, financeCheckPos = { 22,4 }, statsCheckMenuPos = { 25,3 };
 static const int PageSize = 15;
 
 void statsCheckPage(FVMO gdata) {
@@ -9,9 +10,9 @@ void statsCheckPage(FVMO gdata) {
 	int errPageStart = 1;
 	int select, num;
 
-	Record* errList = recordListInit(recordCreate()), * errinfo = NULL;
+	Record* errList = recordListInit(recordCreate()), * errinfo = NULL, * rec = NULL;
 	char errmsg[INV_CHECK_MSG_MAX];
-	int errRecID;
+	int errRecID, recID;
 	listForEachEntry(Inventory, pos, &gdata.inventory->list, list) {
 		if (errRecID = invRecCheck(pos, errmsg)) {
 			errinfo = recordCreate();
@@ -54,7 +55,7 @@ void statsCheckPage(FVMO gdata) {
 		}
 		Coord cur = financeCheckPos;
 		for (int i = 0; i < 3; i++) {
-			if (financeError) drawColorBar(gdata.renderer, cur,230, 140, 140, InvCheckRectSize.y);
+			if (financeError) drawColorBar(gdata.renderer, cur, 230, 140, 140, InvCheckRectSize.y);
 			else drawColorBar(gdata.renderer, cur, 160, 220, 170, InvCheckRectSize.y);
 			drawListItem(gdata.renderer, cur, financeData[i], 6);
 			cur.x++;
@@ -62,7 +63,7 @@ void statsCheckPage(FVMO gdata) {
 		drawMenu(gdata.renderer, statsCheckMenuPos, "数据核对", 4, 1,
 			"上一页",
 			"下一页",
-			"查看商品记录",
+			"查看记录详情",
 			"退出");
 		inputStart(gdata.renderer, INPUT_ORIGIN);
 		renderPresent(gdata.renderer);
@@ -76,6 +77,8 @@ void statsCheckPage(FVMO gdata) {
 			errPageStart += PageSize;
 			break;
 		case 3:
+			breakCatch(inputRecordID(gdata.record, TIME_RECORDS, &recID, &rec)) break;
+			recDetails(rec, gdata);
 			break;
 		case 4:
 			recordListClear(errList);
@@ -89,18 +92,26 @@ void statsCheckPage(FVMO gdata) {
 }
 void statsPage(FVMO gdata) {
 	int invPageStart = 1;
+	int inHistoryInv=0;
 	int select, num;
 	bool drawGlobalFinance = false;
-	Inventory* finInv = NULL;
+	Inventory* finInv = NULL, * inv = NULL,*optList=NULL;
 	Record dateFilter;
 	InvStatsArg isa;
 	int inDateFilter = 0;
 	char filterOpt[2][20] = { "指定时间段","取消指定时间段" }, filterTitle[50], * titleCur;
+	char historyOpt[2][20] = { "统计历史商品","取消统计历史商品" };
 	struct tm sdate, edate;
 	pageStackPush(pageStackCreate("数据统计"), gdata.pageStack);
 	while (1) {
 		renderClear(gdata.renderer);
 		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
+		if (inHistoryInv) {
+			optList = gdata.historyInventory;
+		}
+		else {
+			optList = gdata.inventory;
+		}
 		if (inDateFilter) {
 			localtime_s(&sdate, &dateFilter.time);
 			localtime_s(&edate, &dateFilter.lastTime);
@@ -110,18 +121,19 @@ void statsPage(FVMO gdata) {
 			if (dateFilter.lastTime != TIME_NAN) titleCur += sprintf_s(titleCur, 20, "%d/%d/%d)", edate.tm_year + 1900, edate.tm_mon + 1, edate.tm_mday);
 			else titleCur += sprintf_s(titleCur, 20, "不限)");
 			isa = (InvStatsArg){ &dateFilter,&gdata };
-			drawListPage(gdata.renderer, statsPos, filterTitle, drawInvStatsList, &gdata.inventory->list, &invPageStart, PageSize, statsRectSize, &isa);
+			drawListPage(gdata.renderer, statsPos, filterTitle, drawInvStatsList, &optList->list, &invPageStart, PageSize, statsRectSize, &isa);
 		}
 		else {
 			isa = (InvStatsArg){ NULL,&gdata };
-			drawListPage(gdata.renderer, statsPos, "数据统计", drawInvStatsList, &gdata.inventory->list, &invPageStart, PageSize, statsRectSize, &isa);
+			drawListPage(gdata.renderer, statsPos, "数据统计", drawInvStatsList, &optList->list, &invPageStart, PageSize, statsRectSize, &isa);
 		}
 
-		drawMenu(gdata.renderer, statsMenuPos, "数据统计", 6, 1,
+		drawMenu(gdata.renderer, statsMenuPos, "数据统计", 7, 1,
 			"上一页",
 			"下一页",
 			"查看商品记录",
 			filterOpt[inDateFilter],
+			historyOpt[inHistoryInv],
 			"数据核对",
 			"退出");
 		inputStart(gdata.renderer, INPUT_ORIGIN);
@@ -136,7 +148,8 @@ void statsPage(FVMO gdata) {
 			invPageStart += PageSize;
 			break;
 		case 3:
-			drawGlobalFinance = false;
+			breakCatch(inputInventoryID(gdata.inventory, &num, &inv)) break;
+			invRecordPage(inv->invRecord, gdata);
 			break;
 		case 4:
 			if (inDateFilter) {
@@ -152,9 +165,17 @@ void statsPage(FVMO gdata) {
 			}
 			break;
 		case 5:
-			statsCheckPage(gdata);
+			if (inHistoryInv) {
+				inHistoryInv = 0;
+			}
+			else {
+				inHistoryInv = 1;
+			}
 			break;
 		case 6:
+			statsCheckPage(gdata);
+			break;
+		case 7:
 			pageStackPop(gdata.pageStack);
 			return;
 		default:

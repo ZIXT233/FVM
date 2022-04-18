@@ -8,11 +8,9 @@
 #define ESC "\033"
 #define CSI "\033["
 
-static char recordType[5][20] = { "","进货记录","销售记录","更新记录","赠送记录" };
-int typeDirect[5] = { 0,1,-1,1,-1 };
 
-char quanlityText[5][20] = { "","优","良","差" };
-char packText[3][20] = { "","散装","单元装" };
+
+
 
 
 
@@ -209,7 +207,7 @@ void drawRecordList(Renderer* renderer, Coord origin, ListHead* entry, int pageS
 
 		cur.x++;
 		n++;
-	}recordForEachEnd(pos, start, type)
+	}recordForEachEnd
 }
 
 
@@ -836,11 +834,54 @@ int getDateTime(const char* query, time_t* value, bool strict) { //无输入则置val
 		}
 	}
 }
+int getTimeInput(const char* query, time_t* value, bool strict) { //无输入则置value为TIME_NAN
+	struct tm ti, ti_verify;
+	time_t time;
+	int readLen;
+	*value = TIME_NAN;
+	memset(&ti, 0, sizeof(ti));
+	char input[INFOMAX];
+	while (1) {
+		printf("%s", query);
+		readline(input, INFOMAX, stdin, &readLen);
+		if (strcmp(input, "quit") == 0) return INPUT_BREAK;
+		if (input[0] == '\0') {
+			if (!strict) return INPUT_NOCHANGE;
+			else continue;
+		}
+		if (sscanf_s(input, "%d.%d.%d/%d:%d:%d", &ti.tm_year, &ti.tm_mon, &ti.tm_mday,&ti.tm_hour,&ti.tm_min,&ti.tm_sec) == 6) {
+			ti.tm_year -= 1900;
+			ti.tm_mon--;
+			ti_verify = ti;
+			//ti.tm_hour = 8;
+			time = mktime(&ti);
+			ti_verify.tm_wday = ti.tm_wday, ti_verify.tm_yday = ti.tm_yday;
+			if (time == -1 || memcmp(&ti, &ti_verify, sizeof(ti)) != 0) {
+				printf("输入正确的时间。\n");
+			}
+			else {
+				*value = time;
+				return INPUT_SUCCESS;
+			}
+		}
+	}
+}
 int inputInventoryID(const Inventory* head, int* id, Inventory** pInv) {
 	*pInv = NULL;
 	while (1) {
 		breakDeliver(getUIntInput("请输入商品ID:", id, ALLINT, true));
 		if (*pInv = invQueryID(head, *id)) return;
+		else {
+			printf("查无此商品。\n");
+		}
+	}
+}
+int inputInventoryIDHistory(const Inventory* head, const Inventory* historyHead, int* id, Inventory** pInv) {
+	*pInv = NULL;
+	while (1) {
+		breakDeliver(getUIntInput("请输入商品ID:", id, ALLINT, true));
+		if (*pInv = invQueryID(head, *id)) return;
+		else if (*pInv = invQueryID(historyHead, *id)) return;
 		else {
 			printf("查无此商品。\n");
 		}
@@ -935,6 +976,7 @@ int inputProductFilter(Product* prod) {
 	breakDeliver(getStrInput("输入种类(默认不限):", prod->kind, INFOMAX, false));
 	breakDeliver(getStrInput("输入品种(默认不限):", prod->variety, INFOMAX, false));
 	breakDeliver(getDateTime("在此日期及之前过期(年.月.日)(默认不限) : ", &prod->expiration, false));
+	if (prod->expiration != TIME_NAN) prod->expiration += 3600 * 24 - 1; //确保大于等于当天所有时间
 	drawOrdMenu("品质:", 4, 0, "不限", "优", "良", "差");
 	breakDeliver(getUIntInput("输入品质(默认不限):", &prod->quality, (IntRange) { 1, 3 }, false));
 	drawOrdMenu("包装方式:", 3, 0, "不限", "散装", "单元装");
@@ -953,6 +995,16 @@ int inputRecordFilter(Record* rec) {
 	if (rec->lastTime != TIME_NAN) rec->lastTime += 3600 * 24 - 1;
 	return INPUT_SUCCESS;
 }
+int inputSaleRecordFilter(Record* rec) {
+	memset(rec, 0, sizeof(Record));
+	rec->time = rec->lastTime = TIME_NAN;
+	rec->type = SALE;
+	breakDeliver(inputProductFilter(&rec->prod));
+	breakDeliver(getDateTime("筛选的最早日期(年.月.日)(默认不限) : ", &rec->time, false));
+	breakDeliver(getDateTime("筛选的最晚日期(年.月.日)(默认不限) : ", &rec->lastTime, false));
+	if (rec->lastTime != TIME_NAN) rec->lastTime += 3600 * 24 - 1;
+	return INPUT_SUCCESS;
+}
 
 
 
@@ -962,7 +1014,7 @@ void showProductDetails(Renderer* renderer, Coord pos, Product* prod, int lineNu
 	int valWidth = ProdDetailsRectSize.y - 13;
 	CellData cellName[6][2] = { {{drawCellStr,12,0,"种类"},{drawCellStr,valWidth,0,&prod->kind}},
 								{{drawCellStr,12,0,"品种"},{drawCellStr,valWidth,1,&prod->variety}},
-								{{drawCellStr,12,0,"品质"},{drawCellStr,valWidth,0,&quanlityText[prod->quality]}},
+								{{drawCellStr,12,0,"品质"},{drawCellStr,valWidth,0,&qualityText[prod->quality]}},
 								{{drawCellStr,12,0,"过期日期"},{drawCellDate,valWidth,1,&prod->expiration}},
 								{{drawCellStr,12,0,"包装方式"},{drawCellStr,valWidth,0,"散装"}},
 								{{drawCellStr,12,0,"包装方式"},{drawCellStr,valWidth,0,"单元装"}}
@@ -1058,7 +1110,7 @@ void showSSPDetails(Renderer* renderer, Coord pos, SSP* ssp) {
 			coordPrintf(renderer, pos, "在此日期及前过期:%d.%d.%d", date.tm_year + 1900, date.tm_mon + 1, date.tm_mday), pos.x++;
 		}
 		else coordPrintf(renderer, pos, "在此日期及前过期:不限"), pos.x++;
-		if (ssp->filter.quality) coordPrintf(renderer, pos, "品质:%s", quanlityText[ssp->filter.quality]), pos.x++;
+		if (ssp->filter.quality) coordPrintf(renderer, pos, "品质:%s", qualityText[ssp->filter.quality]), pos.x++;
 		else coordPrintf(renderer, pos, "品质:不限"), pos.x++;
 		if (ssp->filter.pack) coordPrintf(renderer, pos, "包装方式:%s", packText[ssp->filter.pack]), pos.x++;
 		else coordPrintf(renderer, pos, "包装方式:不限"), pos.x++;
@@ -1114,9 +1166,7 @@ void showCSPDetails(Renderer* renderer, Coord pos, CSP* csp) {
 	coordPrintf(renderer, pos, "附加说明:%s", csp->addInfo), pos.x++;
 }
 
-char typeQuantityText[5][20] = { "","采购量","销售量","变化量","赠予量" };
-char typeAmountText[5][20] = { "","采购总额","销售总额","总价变化","赠品额外收费" };
-char typeUpriceText[5][20] = { "","采购单价","销售单价","售价变化","赠品额外单价" };
+
 void showRecordDetails(Renderer* renderer, Coord pos, Record* rec) {
 	struct tm time;
 	Coord cur = pos;

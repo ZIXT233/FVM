@@ -33,7 +33,7 @@ Record* recordQueryID(Record* head, int recID, int direct) {
 		if (pos->recID == recID) {
 			return pos;
 		}
-	}recordForEachEnd(pos, head, direct)
+	}recordForEachEnd
 		return NULL;
 }
 
@@ -119,21 +119,18 @@ Finance recordFinanceOpt(const Record* rec, Finance finance) {
 void recordStatsWeight(const Record* head, int type, const Record* filter, double weightTable[]) {
 	for (int i = 1; i <= RecordTypeNum; i++) weightTable[i] = 0;
 	recordForEachStart(pos, head, type) {
-		listForEachEntry(Record, pos, &head->timeList, timeList) {
-			if (!recordMatch(pos, filter)) continue;
-			weightTable[pos->type] += recordTypeProdDirect[pos->type] * pos->prod.weight;
-		}
-	}recordForEachEnd(pos, head, type)
+		if (!recordMatch(pos, filter)) continue;
+		weightTable[pos->type] += recordTypeProdDirect[pos->type] * pos->prod.weight;
+
+	}recordForEachEnd
 }
 
 void recordStatsQuantity(const Record* head, int type, const Record* filter, int quantityTable[]) {
 	for (int i = 1; i <= RecordTypeNum; i++) quantityTable[i] = 0;
 	recordForEachStart(pos, head, type) {
-		listForEachEntry(Record, pos, &head->IRList, IRList) {
-			if (!recordMatch(pos, filter)) continue;
-			quantityTable[pos->type] += recordTypeProdDirect[pos->type] * pos->prod.quantity;
-		}
-	}recordForEachEnd(pos, head, type)
+		if (!recordMatch(pos, filter)) continue;
+		quantityTable[pos->type] += recordTypeProdDirect[pos->type] * pos->prod.quantity;
+	}recordForEachEnd
 }
 Finance recordStatsFinance(const Record* head, int type, const Record* filter, double startUpCapital) {
 	Finance finance;
@@ -141,6 +138,7 @@ Finance recordStatsFinance(const Record* head, int type, const Record* filter, d
 	recordForEachStart(pos, head, type) {
 		if (!recordMatch(pos, filter)) continue;
 		finance = recordFinanceOpt(pos, finance);
-	}recordForEachEnd(pos, head, type)
+	}recordForEachEnd
 		return finance;
 }
+
