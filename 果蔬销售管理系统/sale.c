@@ -660,7 +660,7 @@ void saleReturn(FVMO gdata) {
 	}
 	updateRecord->prod.unitPrice = 0;   //价格改变0
 	updateRecord->prod.amount = -rec->prod.amount;
-	financeExpend(gdata.finance, rec->prod.amount); //退钱
+	financeIncome(gdata.finance, -rec->prod.amount); //退钱
 
 	recordIDAllocate(updateRecord, gdata.record);
 	listAddTail(&updateRecord->timeList, &gdata.record->timeList);
