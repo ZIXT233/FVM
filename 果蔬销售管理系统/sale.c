@@ -110,7 +110,7 @@ int inputInventoryIDinPreOrder(Record* head, int* id, Record** pRec) {
 	}
 }
 
-int SSPSelect(FVMO gdata, Record* preOrder) {
+int SSPSelect(FVMO gdata, Record* preOrder,bool isMember) {
 	Record* rec;
 	CSP* csp;
 	SSP* ssp;
@@ -124,9 +124,26 @@ int SSPSelect(FVMO gdata, Record* preOrder) {
 		}
 	}
 	breakDeliver(inputSSPID(gdata.SSP, &sspID, &ssp));
+	time_t fvmtime = FVMTimerGetFVMTime(gdata.timer);
+	if (ssp->reqDateStart!=TIME_NAN && ssp->reqDateStart > fvmtime) {
+		printf("不在此方案可用时间\n");
+		getchar();
+		return;
+	}
+	if (ssp->reqDateEnd!=TIME_NAN && ssp->reqDateEnd < fvmtime) {
+		printf("不在此方案可用时间\n");
+		getchar();
+		return;
+	}
+	if (ssp->reqMember && !isMember) {
+		printf("此方案需要会员\n");
+		getchar();
+		return;
+	}
 	/*全局条件*/
 	if (rec->invID != ssp->invID && !productMatch(&rec->prod, &ssp->filter)) {
 		printf("商品不满足该方案条件");
+		getchar();
 		return;
 	}
 	else {
@@ -134,10 +151,26 @@ int SSPSelect(FVMO gdata, Record* preOrder) {
 		rec->SSPID = ssp->SSPID;
 	}
 }
-int CSPSlect(CSP* optCSP, Record* preOrder) {
+int CSPSlect(FVMO gdata,CSP* optCSP, Record* preOrder,bool isMember) {
 	CSP* csp;
 	int cspID;
 	breakDeliver(inputCSPID(optCSP, &cspID, &csp));
+	time_t fvmtime = FVMTimerGetFVMTime(gdata.timer);
+	if (csp->reqDateStart!=TIME_NAN && csp->reqDateStart > fvmtime) {
+		printf("不在此方案可用时间\n");
+		getchar();
+		return;
+	}
+	if (csp->reqDateEnd!=TIME_NAN && csp->reqDateEnd < fvmtime) {
+		printf("不在此方案可用时间\n");
+		getchar();
+		return;
+	}
+	if (csp->reqMember && !isMember) {
+		printf("此方案需要会员\n");
+		getchar();
+		return;
+	}
 	listForEachEntry(Record, pos, &preOrder->timeList, timeList) {
 		if (CSPHasInvID(csp, pos->invID)) {
 			if (!csp->overlaySingleSP) {
@@ -166,11 +199,16 @@ int CSPAppCancle(FVMO gdata, Record* preOrder) {
 		}
 	}
 }
-void SSPAutoApplicate(SSP* head, Record* preOrder) {
+void SSPAutoApplicate(SSP* head, Record* preOrder,FVMO gdata, bool isMember) {
 	listForEachEntry(SSP, sspPos, &head->list, list) {
+		time_t fvmtime = FVMTimerGetFVMTime(gdata.timer);
+		if (sspPos->reqDateStart!=TIME_NAN && sspPos->reqDateStart > fvmtime) continue;
+		if (sspPos->reqDateEnd!=TIME_NAN && sspPos->reqDateEnd < fvmtime) continue;
+		if (sspPos->reqMember && !isMember) continue;
 		/*
 		这里限制SSP的全局条件 ...
 		*/
+		
 		if (sspPos->invID > 0) {
 			Inventory* inv;
 			listForEachEntry(Record, recPos, &preOrder->timeList, timeList) {
@@ -478,7 +516,7 @@ int giftSelect(FVMO gdata, Record* preOrder) {
 		//选择完毕进入结算确认页面
 	}
 }
-int salePlanSelect(FVMO gdata, Inventory* cart) {
+int salePlanSelect(FVMO gdata, Inventory* cart,bool isMember) {
 	Record* preOrder = recordListInit(recordCreate()), * rec = NULL;
 	CSP* optCSP = NULL, * csp;
 	int orderPageStart = 1, optCSPPageStart = 1;
@@ -492,7 +530,7 @@ int salePlanSelect(FVMO gdata, Inventory* cart) {
 		rec->type = SALE;
 		listAddTail(&rec->timeList, &preOrder->timeList);
 	}
-	SSPAutoApplicate(gdata.SSP, preOrder);
+	SSPAutoApplicate(gdata.SSP, preOrder,gdata,isMember);
 	pageStackPush(pageStackCreate("销售方案选择"), gdata.pageStack);
 	while (1) {
 		renderClear(gdata.renderer);
@@ -529,10 +567,10 @@ int salePlanSelect(FVMO gdata, Inventory* cart) {
 			orderPageStart += PageSize;
 			break;
 		case 3:
-			SSPSelect(gdata, preOrder);
+			SSPSelect(gdata, preOrder,isMember);
 			break;
 		case 4:
-			CSPSlect(optCSP, preOrder);
+			CSPSlect(gdata,optCSP, preOrder,isMember);
 			break;
 		case 5:
 			SSPAppCancel(preOrder);
@@ -790,6 +828,8 @@ void sale(FVMO gdata) {
 	int inFilter = 0;
 	int pageStart = 1, pageStartSave = 1, cartPageStart = 1;
 	char filterOpt[2][20] = { "商品筛选","取消筛选" };
+	char memberOpt[2][20] = { "会员:否","会员:是" };
+	int isMember=0;
 	Inventory* filterList = NULL, * inv = NULL, * cart = invListInit(invCreate());
 	int select, num;
 	Product filter;
@@ -798,11 +838,12 @@ void sale(FVMO gdata) {
 		renderClear(gdata.renderer);
 		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
 		drawListPage(gdata.renderer, cartPos, "购物车", drawInvList, &cart->list, &cartPageStart, PageSize, invListRectSize, NULL);
-		drawMenu(gdata.renderer, cartMenuPos, "购物车", 5, 11,
+		drawMenu(gdata.renderer, cartMenuPos, "购物车", 6, 11,
 			"上一页",
 			"下一页",
 			"移除商品",
 			"数量更改",
+			memberOpt[isMember],
 			"清空购物车");
 		if (inFilter) {
 			filterList = invFilterListGen(gdata.inventory, &filter);
@@ -857,7 +898,7 @@ void sale(FVMO gdata) {
 			break;
 		case 6:
 			if (cart->list.size >= 1) {
-				if (salePlanSelect(gdata, cart) == SETTLE_SUCCESS) {
+				if (salePlanSelect(gdata, cart,isMember) == SETTLE_SUCCESS) {
 					invListClear(cart);
 				}
 			}
@@ -884,6 +925,13 @@ void sale(FVMO gdata) {
 			cartQuantityModify(cart, gdata.inventory);
 			break;
 		case 15:
+			if (isMember) {
+				isMember = 0;
+			}
+			else {
+				isMember = 1;
+			}
+		case 16:
 			cartClear(cart);
 			break;
 		default:

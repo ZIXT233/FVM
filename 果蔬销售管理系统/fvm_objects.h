@@ -7,6 +7,7 @@
 #include"renderer.h"
 #include"timer.h"
 #include"finance.h"
+#include"sha256.h"
 
 
 #define PAGE_NAME_MAX 256
@@ -49,5 +50,10 @@ typedef struct tagFVMObjects {  //Store system's global data
 	uint8_t passwdSha256[32];
 }FVMObjects, FVMO;
 
-
+static inline bool passwdVerify(char* passwd, const uint8_t* hash) {
+	uint8_t tHash[32];
+	sha256(passwd, strlen(passwd), tHash);
+	if (memcmp(hash, tHash, 32) == 0) return true;
+	return false;
+}
 #endif

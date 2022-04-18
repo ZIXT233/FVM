@@ -33,6 +33,11 @@ int SSPAdd(SSP* head, Inventory* invHead) {
 	breakDeliver(getDoubleInput("输入最低总额(默认不限):", &ssp->filter.amount, WRANGE, false));
 	breakDeliver(getDateTime("输入起始日期(默认不限):", &ssp->reqDateStart, false));
 	breakDeliver(getDateTime("输入截止日期(默认不限):", &ssp->reqDateEnd, false));
+	if (ssp->reqDateEnd!=TIME_NAN) ssp->reqDateEnd += 3600 * 24 - 1;
+	drawOrdMenu("需要会员", 2, 1, "是", "否");
+	breakDeliver(getUIntInput("选择一项:", &num, (IntRange) { 1, 2 }, true));
+	if (num == 1) ssp->reqMember = true;
+	else ssp->reqMember = false;
 	breakDeliver(getDoubleInput("输入折扣率:", &ssp->discount, (DoubleRange) { 0, 1 }, true));
 	while (1) {
 		printf("输入第%d种赠品(或输入quit结束)\n", ssp->optGifts->list.size + 1);
@@ -104,6 +109,12 @@ int CSPAdd(CSP* head, Inventory* invHead) {
 	if (csp->overlaySingleSP == 2) csp->overlaySingleSP = 0;
 	breakDeliver(getDateTime("输入起始日期(默认不限):", &csp->reqDateStart, false));
 	breakDeliver(getDateTime("输入截止日期(默认不限):", &csp->reqDateEnd, false));
+	if (csp->reqDateEnd!=TIME_NAN) csp->reqDateEnd += 3600 * 24 - 1;
+	drawOrdMenu("需要会员", 2, 1, "是", "否");
+	breakDeliver(getUIntInput("选择一项:", &num, (IntRange) { 1, 2 }, true));
+	if (num == 1) csp->reqMember = true;
+	else csp->reqMember = false;
+	
 	breakDeliver(getDoubleInput("输入折扣率:", &csp->discount, (DoubleRange) { 0, 1 }, true));
 	while (1) {
 		printf("输入第%d种赠品(或输入quit结束)\n", csp->optGifts->list.size + 1);

@@ -19,6 +19,7 @@ typedef struct tagCellData {
 	void (*drawer) (Renderer* renderer, Coord origin, struct tagCellData* cell);
 	int width, sign;
 	const void* data;
+	char* unitName;
 }CellData;
 void drawVerticalLine(Renderer* renderer, Coord pos, int height);
 void drawColorBar(Renderer* renderer, Coord origin, int r, int g, int b, int length);

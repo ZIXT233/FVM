@@ -18,6 +18,7 @@ typedef struct tagProduct {
 	double amount;
 	double unitPrice;
 	double purUPrice;  //仅在获取进货输入时使用，进货记录中的 unitPrice等价purUPrice，在其他信息中无意义
+	char unitName[15];
 } Product;
 
 static char qualityText[5][20] = { "","优","良","差" };

@@ -75,6 +75,9 @@
     <ClCompile Include="sha256.c">
       <Filter>源文件\utils</Filter>
     </ClCompile>
+    <ClCompile Include="system_manage.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="sale.h">
@@ -127,6 +130,9 @@
     </ClInclude>
     <ClInclude Include="sha256.h">
       <Filter>头文件\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="system_manage.h">
+      <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

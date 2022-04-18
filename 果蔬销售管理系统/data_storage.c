@@ -15,9 +15,8 @@ int storageStat(char storageDir[]) {
 			pathcur = filename + strlen(filename);
 			*(pathcur++) = '/';
 			nameLimit = sizeof(filename) - (pathcur - filename);
-			/*strcpy_s(filename, sizeof(filename), filePath);
-			strcat_s(filename, sizeof(filename), "/");
-			strcat_s(filename, sizeof(filename), CONFIG_FILENAME);*/
+			strcpy_s(pathcur, nameLimit, CONFIG_FILENAME);
+			if (stat(filename, &buf) != 0) return STORAGE_NO_CONFIG;
 			strcpy_s(pathcur, nameLimit, INVENTORY_FILENAME);
 			if (stat(filename, &buf) != 0) return STORAGE_INCOMPLETE;
 			strcpy_s(pathcur, nameLimit, RECORD_FILENAME);
@@ -46,27 +45,36 @@ FVMO* storageLoadFVMO(char storageDir[]) {  //¶ÁÈ¡,ÎÞÎÄ¼þÔòÖÃ¿Õ
 	int nameLimit = sizeof(filepath) - (pathcur - filepath);
 
 	strcpy_s(pathcur, nameLimit, CONFIG_FILENAME);
-	//storageLoadConfig(filepath, gdata);
-	
+	storageLoadConfig(filepath, gdata);
 	strcpy_s(pathcur, nameLimit, INVENTORY_FILENAME);
 	gdata->inventory = storageLoadInventory(filepath);
+	strcpy_s(pathcur, nameLimit, HISTORY_INVENTORY_FILENAME);
+	gdata->historyInventory = storageLoadInventory(filepath);
 	strcpy_s(pathcur, nameLimit, RECORD_FILENAME);
-	gdata->record = storageLoadRecord(filepath,gdata->inventory);
+	gdata->record = storageLoadRecord(filepath, gdata->inventory,gdata->historyInventory);
 	strcpy_s(pathcur, nameLimit, SALE_PLAN_FILENAME);
 	storageLoadSalePlan(filepath, &gdata->SSP, &gdata->CSP);
-	
+
 	return gdata;
 }
 
-int storageSaveFVMO(char storageDir[],FVMO* gdata) {
+int storageSaveFVMO(char storageDir[], FVMO* gdata) {
+	struct _stat buf;
+	if (!((stat(storageDir, &buf) == 0) && (_S_IFDIR & buf.st_mode))) {
+		storageCreate(storageDir);
+	}
 	char filepath[FILENAME_MAX * 2], * pathcur;
 	strcpy_s(filepath, sizeof(filepath), storageDir);
 	pathcur = filepath + strlen(filepath);
 	*(pathcur++) = '/';
 	int nameLimit = sizeof(filepath) - (pathcur - filepath);
 	int stat;
+	strcpy_s(pathcur, nameLimit, CONFIG_FILENAME);
+	storageSaveConfig(filepath, gdata);
 	strcpy_s(pathcur, nameLimit, INVENTORY_FILENAME);
 	storageSaveInventory(filepath, gdata->inventory);
+	strcpy_s(pathcur, nameLimit, HISTORY_INVENTORY_FILENAME);
+	storageSaveInventory(filepath, gdata->historyInventory);
 	strcpy_s(pathcur, nameLimit, RECORD_FILENAME);
 	storageSaveRecord(filepath, gdata->record);
 	strcpy_s(pathcur, nameLimit, SALE_PLAN_FILENAME);
@@ -82,12 +90,8 @@ int storageLoadConfig(char filename[], FVMO* fvmo) {
 	FVMTimer timeData;
 	if (!fread(&timeData, sizeof(FVMTimer), 1, cfgFile)) return -1;
 	fvmo->timer = FVMTimerCreate(timeData.FVMTime, NULL, NULL);
-
 	fvmo->finance = (Finance*)malloc(sizeof(Finance));
-	if (!fread(fvmo->finance, sizeof(FVMTimer), 1, cfgFile)) {
-		free(fvmo->finance);
-		return -1;
-	}
+	if (!fread(fvmo->finance, sizeof(Finance), 1, cfgFile)) return -1;
 	if (!fread(fvmo->passwdSha256, sizeof(fvmo->passwdSha256), 1, cfgFile)) return -1;
 	fclose(cfgFile);
 	return 0;
@@ -96,8 +100,9 @@ int storageSaveConfig(char filename[], FVMO* fvmo) {
 	FILE* cfgFile;
 	fopen_s(&cfgFile, filename, "wb");
 	if (!cfgFile) return -1;
-
+	WaitForSingleObject(fvmo->timer->timeMutex, INFINITE);
 	fwrite(fvmo->timer, sizeof(FVMTimer), 1, cfgFile);
+	ReleaseMutex(fvmo->timer->timeMutex);
 	fwrite(fvmo->finance, sizeof(Finance), 1, cfgFile);
 	fwrite(fvmo->passwdSha256, sizeof(fvmo->passwdSha256), 1, cfgFile);
 	fclose(cfgFile);
@@ -117,7 +122,7 @@ Inventory* storageLoadInventory(char filename[]) {
 	//head->invID = data.invID;
 	//head->invIDCnt = data.invIDCnt;
 	int dataSize = data.list.size;
-	
+
 	for (int i = 0; i < dataSize; i++) {
 		if (!fread(&data, sizeof(Inventory), 1, invFile)) {
 			invListClear(head);
@@ -146,7 +151,7 @@ int storageSaveInventory(char filename[], Inventory* head) {
 	return 0;
 }
 
-Record* storageLoadRecord(char filename[], Inventory* invHead) { //ÎÄ¼þÃûÓë¹ØÁªµÄ¿â´æÐÅÏ¢,¼ÇÂ¼ÀàÐÍ¹¹ÔìÊ±ÎÞ¶¯Ì¬·ÖÅäÆäËûÄÚ´æ£¬Ö±½Ó°´Î»¸´ÖÆÔÙ¸ÄÖ¸Õë
+Record* storageLoadRecord(char filename[], Inventory* invHead,Inventory* invHeadHistory) { //ÎÄ¼þÃûÓë¹ØÁªµÄ¿â´æÐÅÏ¢,¼ÇÂ¼ÀàÐÍ¹¹ÔìÊ±ÎÞ¶¯Ì¬·ÖÅäÆäËûÄÚ´æ£¬Ö±½Ó°´Î»¸´ÖÆÔÙ¸ÄÖ¸Õë
 	FILE* recFile;
 	Record* head = NULL, * rec = NULL, data;
 	Inventory* inv = NULL;
@@ -169,6 +174,9 @@ Record* storageLoadRecord(char filename[], Inventory* invHead) { //ÎÄ¼þÃûÓë¹ØÁªµ
 		}
 		listAddTail(&rec->timeList, &head->timeList);
 		if (invHead && (inv = invQueryID(invHead, rec->invID))) {
+			listAddTail(&rec->IRList, &inv->invRecord->IRList);
+		}
+		else if (invHeadHistory && (inv = invQueryID(invHeadHistory, rec->invID))) {
 			listAddTail(&rec->IRList, &inv->invRecord->IRList);
 		}
 		else {
@@ -196,7 +204,7 @@ void storageLoadSalePlan(char filename[], SSP** pSSP, CSP** pCSP) {
 	FILE* SPFile;
 	SSP* sspHead = NULL, * ssp = NULL, sspData;
 	CSP* cspHead = NULL, * csp = NULL, cspData;
-	Inventory* giftHead=NULL, * gift = NULL;
+	Inventory* giftHead = NULL, * gift = NULL;
 	Inventory* comInvHead = NULL, * comInv = NULL;
 	fopen_s(&SPFile, filename, "rb");
 	if (!SPFile) return;
@@ -214,7 +222,7 @@ void storageLoadSalePlan(char filename[], SSP** pSSP, CSP** pCSP) {
 	for (int i = 0; i < sspSize; i++) {
 		ssp = (SSP*)malloc(sizeof(SSP));
 		if (!fread(ssp, sizeof(SSP), 1, SPFile)) {
-			SSPDEL:
+		SSPDEL:
 			free(ssp);
 			SSPListClear(sspHead);
 			SSPDel(sspHead);

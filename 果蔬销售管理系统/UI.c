@@ -151,7 +151,7 @@ void drawInvList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize
 									{drawCellStr,14,0,pos->prod.variety},
 									{drawCellDouble,14,1,&pos->prod.unitPrice},
 									{drawCellInt,14,0,&pos->invID},
-									{packDrawer,14,0,qw} };
+									{packDrawer,14,0,qw,pos->prod.unitName} };
 		if (n & 1)drawColorBar(renderer, cur, 238, 232, 213, invListRectSize.y);
 		else resetBackgroundColor(renderer);
 		drawListItem(renderer, cur, cellData, 5);
@@ -198,7 +198,7 @@ void drawRecordList(Renderer* renderer, Coord origin, ListHead* entry, int pageS
 								{drawCellInt,12,0, &pos->invID},
 								{drawCellStr,12,0,pos->prod.kind},
 								{drawCellStr,12,0,pos->prod.variety},
-								{packDrawer,15,1,qw},
+								{packDrawer,15,1,qw,pos->prod.unitName},
 								{drawCellDouble,15,1,&amount},
 								{drawCellTime,22,1,&pos->time} };
 		if (n & 1)drawColorBar(renderer, cur, 238, 232, 213, RecordRectSize.y);
@@ -234,8 +234,8 @@ void drawInvCheckList(Renderer* renderer, Coord origin, ListHead* entry, int pag
 			packDrawer = drawCellUNIT;
 		}
 		CellData cellData[6] = { {drawCellStr,12,0,pos->prod.kind},{drawCellStr,12,0,pos->prod.variety},{drawCellInt,10,0,&pos->invID},
-								  (pos->recID != -1) ? (CellData) { drawCellInt,17,0,& pos->recID } : (CellData) { drawCellStr,17,0," -" },
-									{drawCellStr,65,0,pos->addInfo},{packDrawer,12,0,qw} };
+								  (pos->recID != -1) ? (CellData) { drawCellInt,17,0,&pos->recID } : (CellData) { drawCellStr,17,0," -" },
+									{drawCellStr,65,0,pos->addInfo},{packDrawer,12,0,qw,pos->prod.unitName} };
 
 
 		if (n & 1)drawColorBar(renderer, cur, 238, 232, 213, InvCheckRectSize.y);
@@ -379,7 +379,7 @@ void drawPreOrderList(Renderer* renderer, Coord origin, ListHead* entry, int pag
 		discountAmount = pos->prod.amount * pos->discount;
 		CellData cellData[9] = { {drawCellStr,12,0,pos->prod.kind},{drawCellStr,12,0,pos->prod.variety},{drawCellInt,10,0,&pos->invID},
 								{drawCellSSP,20,0,ssp},{drawCellCSP,20,0,csp},{drawCellDouble,12,0,&pos->prod.unitPrice},
-								{packDrawer,10,0,qw},{drawCellDouble,7,0,&pos->discount},{drawCellDouble,12,0,&discountAmount} };
+								{packDrawer,10,0,qw,pos->prod.unitName},{drawCellDouble,7,0,&pos->discount},{drawCellDouble,12,0,&discountAmount} };
 		if (pos->type == GIFT) {
 			cellData[7] = (CellData){ drawCellStr,7,0,"赠品" };
 			if (n & 1)drawColorBar(renderer, cur, 130, 200, 150, PreOrderRectSize.y);
@@ -418,7 +418,8 @@ void drawCellBULK(Renderer* renderer, Coord origin, CellData* cell) {
 	sub.width -= 1;
 	drawCellDouble(renderer, origin, &sub);
 	origin.y += cell->width - 2;
-	coordPrintf(renderer, origin, "斤");
+	if (cell->unitName == NULL || cell->unitName[0] == '\0')coordPrintf(renderer, origin, "斤");
+	else coordPrintf(renderer, origin, "%s", cell->unitName);
 }
 void drawCellInt(Renderer* renderer, Coord origin, CellData* cell) {
 	int data = *(int*)cell->data;
@@ -430,7 +431,8 @@ void drawCellUNIT(Renderer* renderer, Coord origin, CellData* cell) {
 	sub.width -= 1;
 	drawCellInt(renderer, origin, &sub);
 	origin.y += cell->width - 2;
-	coordPrintf(renderer, origin, "个");
+	if (cell->unitName == NULL || cell->unitName[0] == '\0')coordPrintf(renderer, origin, "个");
+	else coordPrintf(renderer, origin, "%s", cell->unitName);
 }
 void drawCellStr(Renderer* renderer, Coord origin, CellData* cell) {
 	char* data = (char*)cell->data, output[INFOMAX];
@@ -528,10 +530,10 @@ void drawInvStatsList(Renderer* renderer, Coord origin, ListHead* entry, int pag
 		CellData cellData[9] = { {drawCellStr,12,0,pos->prod.kind} ,
 									{drawCellStr,12,0,pos->prod.variety},
 									{drawCellInt,12,0,&pos->invID},
-									{packDrawer,12,0,qwTable[SALE]},
-									{packDrawer,12,0,qwTable[PURCHASE]},
-									{packDrawer,12,0,qwTable[GIFT]},
-									{packDrawer,12,0,qwTable[DESTROY]},
+									{packDrawer,12,0,qwTable[SALE],pos->prod.unitName},
+									{packDrawer,12,0,qwTable[PURCHASE],pos->prod.unitName},
+									{packDrawer,12,0,qwTable[GIFT],pos->prod.unitName},
+									{packDrawer,12,0,qwTable[DESTROY],pos->prod.unitName},
 									{drawCellDouble,15,1,&finance.turnover},
 									{drawCellDouble,15,1,&finance.profit} };
 		if (n & 1)drawColorBar(renderer, cur, 160, 210, 118, statsRectSize.y);
@@ -610,7 +612,7 @@ void drawGiftList(Renderer* renderer, Coord origin, ListHead* entry, int pageSiz
 		CellData cellData[5] = { {drawCellStr,14,0,pos->prod.kind},
 								{drawCellStr,14,0,pos->prod.variety},
 								{drawCellInt,10,0,&pos->invID},
-								{packDrawer,10,0,qw},
+								{packDrawer,10,0,qw,pos->prod.unitName},
 								{drawCellDouble,10,0,&pos->prod.unitPrice} };
 		if (n & 1)drawColorBar(renderer, cur, 238, 232, 213, GiftRectSize.y);
 		else resetBackgroundColor(renderer);
@@ -681,6 +683,7 @@ void inputStart(Renderer* renderer, Coord inputOrigin) {
 #define READ_TOO_LONG -1
 #define READ_SUCCESS 0
 extern FILE* stdinLog;
+extern int demoDelay;
 int readline(char* buf, int maxCount, FILE* stream, int* pNumberRead) { //从流读取一行存在buf中，最大读入maxCount个字符（包括空字符），丢弃换行符和多余字符
 	int i;
 	char t;
@@ -688,6 +691,7 @@ int readline(char* buf, int maxCount, FILE* stream, int* pNumberRead) { //从流读
 	for (i = 0; (t = fgetc(stream)) != '\n'; i++) {
 		if (i < maxCount - 1) buf[i] = t;
 	}
+	if (demoDelay > 0) Sleep(demoDelay);
 	if (i >= maxCount) {
 		fwrite(buf, 1, maxCount - 1, stdinLog);
 		fputc('\n', stdinLog); fflush(stdinLog);
@@ -932,6 +936,7 @@ int inputProduct(Product* prod) {
 	breakDeliver(getUIntInput("选择品质:", &prod->quality, (IntRange) { 1, 3 }, true));
 	drawOrdMenu("包装方式:", 2, 1, "散装", "单元装");
 	breakDeliver(getUIntInput("选择包装方式:", &prod->pack, (IntRange) { 1, 2 }, true));
+	breakDeliver(getStrInput("输入包装具体单位名(可选):", prod->unitName, 15, false));
 	if (prod->pack == BULK) {
 		breakDeliver(getDoubleInput("输入重量:", &prod->weight, WRANGE, true));
 		prod->weight = centRound(prod->weight);
@@ -1059,7 +1064,7 @@ void showInvDetails(Renderer* renderer, Coord pos, Inventory* inv) {
 		qw = &inv->prod.quantity;
 	}
 	CellData cellName[3][2] = { {{drawCellStr,12,0,"商品ID"},{drawCellInt,valWidth,0,&inv->invID}},
-								{{drawCellStr,12,0,"库存量"},{packDrawer,12,0,qw}},
+								{{drawCellStr,12,0,"库存量"},{packDrawer,12,0,qw,inv->prod.unitName}},
 								{{drawCellStr,12,0,"销售单价"},{drawCellDouble,valWidth,0,&inv->prod.unitPrice}}
 	};
 	for (int i = 0, line = 0; i < 3; i++) {
@@ -1094,8 +1099,8 @@ void showSSPDetails(Renderer* renderer, Coord pos, SSP* ssp) {
 				 {{drawCellStr,18,0,"品质"},{ drawCellStr,valWidth,0,qualityText[ssp->filter.quality]}},
 				 {{drawCellStr,18,0,"包装方式"}, { drawCellPackStr, valWidth, 0,&ssp->filter.pack }},
 				 {{drawCellStr,18,0,"最低单价"},{ drawCellDouble,valWidth,0,&ssp->filter.unitPrice }},
-				 {{drawCellStr,18,0,"最低购买重量"}, { drawCellDouble,valWidth,0,&ssp->filter.weight }},
-		/*10*/    {{drawCellStr,18,0,"最低购买数量"},{ drawCellInt,valWidth,0,&ssp->filter.quantity }},
+				 {{drawCellStr,18,0,"最低购买重量"}, { drawCellBULK,valWidth,0,&ssp->filter.weight ,NULL}},
+		/*10*/    {{drawCellStr,18,0,"最低购买数量"},{ drawCellUNIT,valWidth,0,&ssp->filter.quantity ,NULL}},
 				  {{drawCellStr,18,0,"最低总额"}, { drawCellDouble,valWidth,0,&ssp->filter.amount }},
 				  {{drawCellStr,18,0,"开始日期"}, { drawCellDate,valWidth,0,&ssp->reqDateStart }},
 				  {{drawCellStr,18,0,"截止日期"},{ drawCellDate,valWidth,0,&ssp->reqDateEnd }},
@@ -1364,7 +1369,7 @@ void showRecordDetails(Renderer* renderer, Coord pos, Record* rec) {
 	  {{drawCellStr,12,0,"商品ID"},{drawCellInt,12,0,&rec->invID}},
 	  {{drawCellStr,12,0,"类型"},{drawCellStr,12,0,&recordType[rec->type]}},
 	  {{drawCellStr,12,0,"记录时间"},{drawCellTime,12,0,&rec->time}},
-	  {{drawCellStr,12,0,&typeQuantityText[rec->type]},{packDrawer,12,0,qw}},
+	  {{drawCellStr,12,0,&typeQuantityText[rec->type]},{packDrawer,12,0,qw,rec->prod.unitName}},
 	  {{drawCellStr,12,0,&typeUpriceText[rec->type]},{drawCellDouble,12,0,&rec->prod.unitPrice}},
 	  {{drawCellStr,12,0,&typeAmountText[rec->type]},{drawCellDouble,12,0,&rec->prod.amount}},
 	  {{drawCellStr,12,0,"附加信息"},{drawCellStr,12,0,&rec->addInfo}}

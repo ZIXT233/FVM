@@ -156,6 +156,7 @@
     <ClCompile Include="sale_plan_manage.c" />
     <ClCompile Include="sha256.c" />
     <ClCompile Include="statistic.c" />
+    <ClCompile Include="system_manage.c" />
     <ClCompile Include="timer.c" />
     <ClCompile Include="UI.c" />
   </ItemGroup>
@@ -175,6 +176,7 @@
     <ClInclude Include="sale_plan_manage.h" />
     <ClInclude Include="sha256.h" />
     <ClInclude Include="statistics.h" />
+    <ClInclude Include="system_manage.h" />
     <ClInclude Include="timer.h" />
     <ClInclude Include="UI.h" />
   </ItemGroup>

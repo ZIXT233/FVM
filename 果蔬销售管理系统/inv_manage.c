@@ -417,8 +417,8 @@ Inventory* creatRandInv() {
 	inv->prod.pack = rand() % 2 + 1;
 	inv->prod.quality = rand() % 3 + 1;
 	inv->prod.expiration = time(NULL) * 1.5 * rand() / RAND_MAX;
-	inv->prod.purUPrice = centRound(rand()%50+((double)rand()/RAND_MAX));
-	inv->prod.unitPrice = centRound(inv->prod.purUPrice*(1+(double)rand()/RAND_MAX));
+	inv->prod.purUPrice = centRound(rand() % 50 + ((double)rand() / RAND_MAX));
+	inv->prod.unitPrice = centRound(inv->prod.purUPrice * (1 + (double)rand() / RAND_MAX));
 	if (inv->prod.pack == UNIT) inv->prod.quantity = rand() % 1000;
 	else inv->prod.weight = centRound(rand() % 1000 + ((double)rand() / RAND_MAX));
 	return inv;
@@ -657,7 +657,15 @@ void recordPage(FVMO gdata) {
 			recDetails(rec, gdata);
 			break;
 		case 6:
-			recordReplace(gdata);
+			char passwd[INFOMAX];
+			breakCatch(getStrInput("输入管理员密码:", passwd, INFOMAX, true)) break;
+			if (passwdVerify(passwd, gdata.passwdSha256)) {
+				recordReplace(gdata);
+			}
+			else {
+				printf("密码错误!");
+				Sleep(3000);
+			}
 			break;
 		case 7:
 			pageStackPop(gdata.pageStack);
@@ -690,13 +698,11 @@ void invRecordPage(Record* invRecord, FVMO gdata) {
 		else {
 			drawListPage(gdata.renderer, RecordListPos, "商品仓管记录", drawRecordList, &invRecord->IRList, &pageStart, PageSize, RecordRectSize, &invRec);
 		}
-		drawMenu(gdata.renderer, invMenuPos, "仓管记录", 7, 1,
+		drawMenu(gdata.renderer, invMenuPos, "仓管记录", 5, 1,
 			"上一页",
 			"下一页",
 			filterOpt[inFilter],
 			"记录详情",
-			"记录删除",
-			"记录更改替换",
 			"退出");
 		inputStart(gdata.renderer, INPUT_ORIGIN);
 		renderPresent(gdata.renderer);
@@ -728,18 +734,6 @@ void invRecordPage(Record* invRecord, FVMO gdata) {
 			recDetails(rec, gdata);
 			break;
 		case 5:
-			num = getSelect();
-			listForEachSafe(pos, &invRecord->IRList) {
-				if (num == (rec = recordEntry(pos, IRList))->recID) {
-					listRemove(pos);
-					listRemove(&rec->timeList);
-					recordDel(rec);
-				}
-			}
-			break;
-		case 6:
-			break;
-		case 7:
 			pageStackPop(gdata.pageStack);
 			return;
 		}

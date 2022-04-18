@@ -16,6 +16,9 @@
 *   ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 *   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
+#ifndef SHA256_H
+#define SHA256_H
+
 
 #include <stdint.h>
 
@@ -40,3 +43,4 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
+#endif // !SHA256_H
