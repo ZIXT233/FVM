@@ -75,7 +75,9 @@ static const Coord InvDetailsRectSize = { 8,75 };
 void showInvDetails(Renderer* renderer,Coord pos,Inventory* inv);
 static const Coord RecordDetailsRectSize = { 13,75 };
 void showRecordDetails(Renderer* renderer,Coord pos,Record* rec);
+static const Coord SSPDetailsRectSize = { 18,53 };
 void showSSPDetails(Renderer* renderer, Coord pos, SSP* ssp);
+static const Coord CSPDetailsRectSize = { 18,38 };
 void showCSPDetails(Renderer* renderer, Coord pos, CSP* csp);
 
 

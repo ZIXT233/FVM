@@ -56,9 +56,10 @@ void SSPDetails(SSP* ssp,FVMO gdata) {
 	while (1) {
 		renderClear(gdata.renderer);
 		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
-		showSSPDetails(gdata.renderer, SSPDetailsPos, ssp);
+		drawTitleWindow(gdata.renderer, SSPDetailsPos, "单品销售方案详情", SSPDetailsRectSize);
+		showSSPDetails(gdata.renderer, (Coord) { SSPDetailsPos.x + 3, SSPDetailsPos.y + 1 }, ssp);
 		drawListPage(gdata.renderer, SSPGiftPos, "赠品列表", drawGiftList, &ssp->optGifts->list, &giftPageStart, PageSize, GiftRectSize, NULL);
-		drawMenu(gdata.renderer, SSPDetailsMenuPos, "组合优惠方案详情", 3, 1,
+		drawMenu(gdata.renderer, SSPDetailsMenuPos, "单品优惠方案详情", 3, 1,
 			"赠品上一页",
 			"赠品下一页",
 			"退出");
@@ -127,7 +128,8 @@ void CSPDetails(CSP* csp,FVMO gdata) {
 	while (1) {
 		renderClear(gdata.renderer);
 		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
-		showCSPDetails(gdata.renderer, CSPDetailsPos, csp);
+		drawTitleWindow(gdata.renderer, CSPDetailsPos, "组合销售方案详情", CSPDetailsRectSize);
+		showCSPDetails(gdata.renderer, (Coord) { CSPDetailsPos.x + 3, CSPDetailsPos.y + 1 }, csp);
 		drawListPage(gdata.renderer, CSPComInvPos, "组合商品列表", drawComInvList, &csp->comInv->list, &comInvPageStart, PageSize, CSPComInvRectSize, NULL);
 		drawListPage(gdata.renderer, CSPGiftPos, "赠品列表", drawGiftList, &csp->optGifts->list, &giftPageStart, PageSize, GiftRectSize, NULL);
 		drawMenu(gdata.renderer, CSPDetailsMenuPos, "组合优惠方案详情", 6, 1,
