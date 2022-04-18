@@ -260,8 +260,8 @@ int settleProc(FVMO gdata, Record* preOrder) {
 	listForEachEntrySafe(Record, pos, &preOrder->timeList, timeList) {
 		pos->time = ti;
 		pos->prod.amount = centRound(pos->prod.amount * pos->discount);
-		listAddTail(&preOrder->IRList, &gdata.order->IRList);
-		recordIDAllocate(preOrder, gdata.order);
+		//listAddTail(&preOrder->IRList, &gdata.order->IRList);
+		//recordIDAllocate(preOrder, gdata.order);
 
 
 		/*
@@ -280,6 +280,8 @@ int settleProc(FVMO gdata, Record* preOrder) {
 		recordIDAllocate(rec, gdata.record);
 		listAddTail(&rec->timeList, &gdata.record->timeList);
 		listAddTail(&rec->IRList, &inv->invRecord->IRList);
+
+		free(preOrder);
 	}
 	return 0;
 }
