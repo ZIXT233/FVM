@@ -280,9 +280,8 @@ int settleProc(FVMO gdata, Record* preOrder) {
 		recordIDAllocate(rec, gdata.record);
 		listAddTail(&rec->timeList, &gdata.record->timeList);
 		listAddTail(&rec->IRList, &inv->invRecord->IRList);
-
-		free(preOrder);
 	}
+	free(preOrder);
 	return 0;
 }
 
