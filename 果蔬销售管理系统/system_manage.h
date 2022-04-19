@@ -10,5 +10,5 @@
 
 void setupPage(double* pCapital, time_t* pTime, uint8_t* hash);
 //void systemManage(FVMO* gdata);
-void systemManage(FVMO gdata);
+void systemManage(FVMO *gdata);
 #endif

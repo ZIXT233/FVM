@@ -1,7 +1,7 @@
 #include<string.h>
 #include"sale.h"
 static const int PageSize = 15;
-Coord cartPos = { 2,83 }, cartMenuPos = { 21,83 };
+Coord cartPos = { 2,83 }, cartMenuPos = { 22,83 };
 
 
 int cartAdd(Inventory* cart, Inventory* head) {
@@ -18,7 +18,7 @@ int cartAdd(Inventory* cart, Inventory* head) {
 				getchar();
 				return -1;
 			}
-			breakDeliver(getUIntInput("请输入购买数量:", &quantity, (IntRange) { 0, inv->prod.quantity }, true));
+			breakDeliver(getUIntInput("请输入购买数量:", &quantity, (IntRange) { 1, inv->prod.quantity }, true));
 			item = invCopyCreate(inv);
 			item->prod.quantity = quantity;
 			item->prod.amount = item->prod.quantity * item->prod.unitPrice;
@@ -30,8 +30,14 @@ int cartAdd(Inventory* cart, Inventory* head) {
 				return -1;
 			}
 			breakDeliver(getDoubleInput("请输入购买重量:", &weight, (DoubleRange) { 0, inv->prod.weight }, true));
+			
+			weight=centRound(weight);
+			if (fEqual(weight, 0)) {
+				printf("购买量太少");
+				getchar();
+				return -1;
+			}
 			item = invCopyCreate(inv);
-			centRound(weight);
 			item->prod.weight = weight;
 			item->prod.amount = item->prod.weight * item->prod.unitPrice;
 		}
@@ -44,7 +50,7 @@ int cartAdd(Inventory* cart, Inventory* head) {
 				getchar();
 				return -1;
 			}
-			breakDeliver(getUIntInput("请输入购买数量:", &quantity, (IntRange) { 0, inv->prod.quantity - item->prod.quantity }, true)); //确保增加后不超出库存量
+			breakDeliver(getUIntInput("请输入购买数量:", &quantity, (IntRange) { 1, inv->prod.quantity - item->prod.quantity }, true)); //确保增加后不超出库存量
 			item->prod.quantity += quantity;
 			item->prod.amount = item->prod.quantity * item->prod.unitPrice;
 		}
@@ -55,7 +61,13 @@ int cartAdd(Inventory* cart, Inventory* head) {
 				return -1;
 			}
 			breakDeliver(getDoubleInput("请输入购买重量:", &weight, (DoubleRange) { 0, inv->prod.weight - item->prod.weight }, true));
-			centRound(weight);
+			
+			weight=centRound(weight);
+			if (fEqual(weight, 0)) {
+				printf("购买量太少");
+				getchar();
+				return -1;
+			}
 			item->prod.weight = item->prod.weight + weight;
 			item->prod.amount = item->prod.weight * item->prod.unitPrice;
 		}
@@ -110,21 +122,21 @@ int inputInventoryIDinPreOrder(Record* head, int* id, Record** pRec) {
 	}
 }
 
-int SSPSelect(FVMO gdata, Record* preOrder,bool isMember) {
+int SSPSelect(FVMO *gdata, Record* preOrder,bool isMember) {
 	Record* rec;
 	CSP* csp;
 	SSP* ssp;
 	int recID, cspID, sspID;
 	breakDeliver(inputInventoryIDinPreOrder(preOrder, &recID, &rec));
-	if (rec->CSPID && (csp = CSPQueryID(gdata.CSP, rec->CSPID))) {
+	if (rec->CSPID && (csp = CSPQueryID(gdata->CSP, rec->CSPID))) {
 		if (!csp->overlaySingleSP) {
 			printf("该商品所应用组合方案不可与单品方案叠加(按任意键返回)\n");
 			getchar();
 			return;
 		}
 	}
-	breakDeliver(inputSSPID(gdata.SSP, &sspID, &ssp));
-	time_t fvmtime = FVMTimerGetFVMTime(gdata.timer);
+	breakDeliver(inputSSPID(gdata->SSP, &sspID, &ssp));
+	time_t fvmtime = FVMTimerGetFVMTime(gdata->timer);
 	if (ssp->reqDateStart!=TIME_NAN && ssp->reqDateStart > fvmtime) {
 		printf("不在此方案可用时间\n");
 		getchar();
@@ -151,11 +163,11 @@ int SSPSelect(FVMO gdata, Record* preOrder,bool isMember) {
 		rec->SSPID = ssp->SSPID;
 	}
 }
-int CSPSlect(FVMO gdata,CSP* optCSP, Record* preOrder,bool isMember) {
+int CSPSelect(FVMO *gdata,CSP* optCSP, Record* preOrder,bool isMember) {
 	CSP* csp;
 	int cspID;
 	breakDeliver(inputCSPID(optCSP, &cspID, &csp));
-	time_t fvmtime = FVMTimerGetFVMTime(gdata.timer);
+	time_t fvmtime = FVMTimerGetFVMTime(gdata->timer);
 	if (csp->reqDateStart!=TIME_NAN && csp->reqDateStart > fvmtime) {
 		printf("不在此方案可用时间\n");
 		getchar();
@@ -189,19 +201,19 @@ int SSPAppCancel(Record* preOrder) {
 	rec->SSPID = 0;
 	rec->discount = 1;
 }
-int CSPAppCancle(FVMO gdata, Record* preOrder) {
+int CSPAppCancle(FVMO *gdata, Record* preOrder) {
 	CSP* csp;
 	int cspID;
-	breakDeliver(inputCSPID(gdata.CSP, &cspID, &csp));
+	breakDeliver(inputCSPID(gdata->CSP, &cspID, &csp));
 	listForEachEntry(Record, pos, &preOrder->timeList, timeList) {
 		if (pos->CSPID == csp->CSPID) {
 			pos->CSPID = 0;
 		}
 	}
 }
-void SSPAutoApplicate(SSP* head, Record* preOrder,FVMO gdata, bool isMember) {
+void SSPAutoApplicate(SSP* head, Record* preOrder,FVMO *gdata, bool isMember) {
 	listForEachEntry(SSP, sspPos, &head->list, list) {
-		time_t fvmtime = FVMTimerGetFVMTime(gdata.timer);
+		time_t fvmtime = FVMTimerGetFVMTime(gdata->timer);
 		if (sspPos->reqDateStart!=TIME_NAN && sspPos->reqDateStart > fvmtime) continue;
 		if (sspPos->reqDateEnd!=TIME_NAN && sspPos->reqDateEnd < fvmtime) continue;
 		if (sspPos->reqMember && !isMember) continue;
@@ -252,33 +264,33 @@ const static Coord SalePlanMenu = { 22,3 };
 #define SSPMAX 1000
 #define CSPMAX 1000
 
-int settleProc(FVMO gdata, Record* preOrder) {
+int settleProc(FVMO *gdata, Record* preOrder) {
 	Inventory* inv = NULL;
 	Record* rec = NULL;
 	time_t ti;
-	ti = FVMTimerGetFVMTime(gdata.timer);
+	ti = FVMTimerGetFVMTime(gdata->timer);
 	listForEachEntrySafe(Record, pos, &preOrder->timeList, timeList) {
 		pos->time = ti;
 		pos->prod.amount = centRound(pos->prod.amount * pos->discount);
-		//listAddTail(&preOrder->IRList, &gdata.order->IRList);
-		//recordIDAllocate(preOrder, gdata.order);
+		//listAddTail(&preOrder->IRList, &gdata->order->IRList);
+		//recordIDAllocate(preOrder, gdata->order);
 
 
 		/*
 		* 这里处理账单
 		*/
-		financeIncome(gdata.finance, pos->prod.amount);
+		financeIncome(gdata->finance, pos->prod.amount);
 
 		//处理库存
-		inv = invQueryID(gdata.inventory, pos->invID);
+		inv = invQueryID(gdata->inventory, pos->invID);
 		inv->prod.quantity -= pos->prod.quantity;
 		inv->prod.weight = centRound(inv->prod.weight - pos->prod.weight);
 
 		//添加记录
 		rec = recordCreate();
 		memcpy(rec, pos, sizeof(Record));
-		recordIDAllocate(rec, gdata.record);
-		listAddTail(&rec->timeList, &gdata.record->timeList);
+		recordIDAllocate(rec, gdata->record);
+		listAddTail(&rec->timeList, &gdata->record->timeList);
 		listAddTail(&rec->IRList, &inv->invRecord->IRList);
 	}
 	free(preOrder);
@@ -287,21 +299,21 @@ int settleProc(FVMO gdata, Record* preOrder) {
 
 #define SETTLE_SUCCESS 0
 #define SETTLE_BREAK -1
-int settlement(FVMO gdata, Record* preOrder) {
+int settlement(FVMO *gdata, Record* preOrder) {
 	int orderPageStart = 1, optCSPPageStart = 1;
 	int select, num;
-	pageStackPush(pageStackCreate("订单结算"), gdata.pageStack);
+	pageStackPush(pageStackCreate("订单结算"), gdata->pageStack);
 	while (1) {
-		renderClear(gdata.renderer);
-		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
-		drawListPage(gdata.renderer, PreOrderPos, "最终订单", drawPreOrderList, &preOrder->timeList, &orderPageStart, PageSize, PreOrderRectSize, &gdata);
-		drawMenu(gdata.renderer, PreOrderMenu, "订单结算", 4, 1,
+		renderClear(gdata->renderer);
+		drawStatusBar(gdata->renderer, STATUS_ORIGIN, gdata);
+		drawListPage(gdata->renderer, PreOrderPos, "最终订单", drawPreOrderList, &preOrder->timeList, &orderPageStart, PageSize, PreOrderRectSize, gdata);
+		drawMenu(gdata->renderer, PreOrderMenu, (Coord) { 2,PreOrderRectSize.y }, "订单结算", 4, 1,
 			"上一页",
 			"下一页",
 			"确认结算",
 			"退出");
-		inputStart(gdata.renderer, INPUT_ORIGIN);
-		renderPresent(gdata.renderer);
+		inputStart(gdata->renderer, INPUT_ORIGIN);
+		renderPresent(gdata->renderer);
 		select = getSelect();
 		switch (select)
 		{
@@ -314,33 +326,48 @@ int settlement(FVMO gdata, Record* preOrder) {
 			break;
 		case 3:
 			settleProc(gdata, preOrder);
-			pageStackPop(gdata.pageStack);
+			pageStackPop(gdata->pageStack);
 			return SETTLE_SUCCESS;
 		case 4:
-			pageStackPop(gdata.pageStack);
+			pageStackPop(gdata->pageStack);
 			return SETTLE_BREAK;
 		default:
 			break;
 		}
 	}
 }
-int giftAddToOrder(FVMO gdata, Record* preOrder, Inventory* gift, int SSPID, int CSPID) {
+int giftAddToOrder(FVMO *gdata, Record* preOrder, Inventory* gift, int SSPID, int CSPID) {
 	Inventory* inv = NULL;
 	Record* rec = NULL;
 	int mul = 1;
+	int cartQuantity;
+	double cartWeight;
 	if (gift->prod.unitPrice) {
 		breakDeliver(getUIntInput("该赠品为余额赠品，请输入份数(默认一份):", &mul, QRANGE, false));
 	}
-	if (inv = invQueryID(gdata.inventory, gift->invID)) {
+	if (inv = invQueryID(gdata->inventory, gift->invID)) {
+		
 		if (gift->prod.pack == BULK) {
-			if (gift->prod.weight * mul > inv->prod.weight) {
+			cartWeight = 0;
+			listForEachEntry(Record, pos, &preOrder->timeList, timeList) {
+				if (pos->invID == inv->invID) {
+					cartWeight += pos->prod.weight;
+				}
+			}
+			if (fGreater(gift->prod.weight * mul+cartWeight , inv->prod.weight)) {
 				printf("库存余量不足(任意键返回)\n");
 				getchar();
 				return -1;
 			}
 		}
 		else if (gift->prod.pack == UNIT) {
-			if (gift->prod.quantity * mul > inv->prod.quantity) {
+			cartQuantity = 0;
+			listForEachEntry(Record, pos, &preOrder->timeList, timeList) {
+				if (pos->invID == inv->invID) {
+					cartQuantity += pos->prod.quantity;
+				}
+			}
+			if (gift->prod.quantity * mul+cartQuantity > inv->prod.quantity) {
 				printf("库存余量不足(任意键返回)\n");
 				getchar();
 				return -1;
@@ -367,7 +394,7 @@ int giftAddToOrder(FVMO gdata, Record* preOrder, Inventory* gift, int SSPID, int
 		return -1;
 	}
 }
-int giftSelect(FVMO gdata, Record* preOrder) {
+int giftSelect(FVMO *gdata, Record* preOrder) {
 	int sspid[SSPMAX], cspid[CSPMAX], sspidSize, cspidSize, sspidCur, cspidCur, giftInvID;
 	int orderPageStart = 1, giftPageStart = 1, select;
 	SSP* ssp = NULL;
@@ -403,46 +430,46 @@ int giftSelect(FVMO gdata, Record* preOrder) {
 			}
 		}
 	}
-	pageStackPush(pageStackCreate("赠品选择"), gdata.pageStack);
+	pageStackPush(pageStackCreate("赠品选择"), gdata->pageStack);
 	while (1) {
-		renderClear(gdata.renderer);
-		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
-		drawListPage(gdata.renderer, PreOrderPos, "订单", drawPreOrderList, &preOrder->timeList, &orderPageStart, PageSize, PreOrderRectSize, &gdata);
-
+		renderClear(gdata->renderer);
+		drawStatusBar(gdata->renderer, STATUS_ORIGIN, gdata);
+		drawListPage(gdata->renderer, PreOrderPos, "订单", drawPreOrderList, &preOrder->timeList, &orderPageStart, PageSize, PreOrderRectSize, gdata);
+		ssp = csp = NULL;
 		if (sspidCur < sspidSize) {
-			ssp = SSPQueryID(gdata.SSP, sspid[sspidCur]);
+			ssp = SSPQueryID(gdata->SSP, sspid[sspidCur]);
 			csp = NULL;
 			if (ssp->optGifts->list.size == 0) {
 				sspidCur++;
 				continue;
 			}
-			drawListPage(gdata.renderer, SSPGiftPos, ssp->planName, drawGiftList, &ssp->optGifts->list, &giftPageStart, PageSize, GiftRectSize, &gdata);
+			drawListPage(gdata->renderer, SSPGiftPos, ssp->planName, drawGiftList, &ssp->optGifts->list, &giftPageStart, PageSize, GiftRectSize, gdata);
 		}
 		else if (cspidCur < cspidSize) {
-			csp = CSPQueryID(gdata.CSP, cspid[cspidCur]);
+			csp = CSPQueryID(gdata->CSP, cspid[cspidCur]);
 			ssp = NULL;
 			if (csp->optGifts->list.size == 0) {
 				cspidCur++;
 				continue;
 			}
-			drawListPage(gdata.renderer, SSPGiftPos, csp->planName, drawGiftList, &csp->optGifts->list, &giftPageStart, PageSize, GiftRectSize, &gdata);
+			drawListPage(gdata->renderer, SSPGiftPos, csp->planName, drawGiftList, &csp->optGifts->list, &giftPageStart, PageSize, GiftRectSize, gdata);
 		}
 		else {
-			drawTitleWindow(gdata.renderer, SSPGiftPos, "已无可选赠品", GiftRectSize);
+			drawTitleWindow(gdata->renderer, SSPGiftPos, "已无可选赠品", GiftRectSize);
 		}
-		drawMenu(gdata.renderer, SalePlanMenu, "赠品选择", 6, 1,
+		drawMenu(gdata->renderer, SalePlanMenu, (Coord) {2,PreOrderRectSize.y},"赠品选择", 6, 1,
 			"订单上一页",
 			"订单下一页",
 			"选择当前方案赠品",
 			"下一方案赠品",
 			"前往结算",
 			"退出");
-		drawMenu(gdata.renderer, optCSPMenuPos, "赠品浏览", 2, 11,
+		drawMenu(gdata->renderer, optCSPMenuPos, (Coord) { 2, GiftRectSize.y }, "赠品浏览", 2, 11,
 			"上一页",
 			"下一页");
 
-		inputStart(gdata.renderer, INPUT_ORIGIN);
-		renderPresent(gdata.renderer);
+		inputStart(gdata->renderer, INPUT_ORIGIN);
+		renderPresent(gdata->renderer);
 		select = getSelect();
 		switch (select) {
 		case 1:
@@ -486,7 +513,7 @@ int giftSelect(FVMO gdata, Record* preOrder) {
 			break;
 		case 5:
 			if (settlement(gdata, preOrder) == SETTLE_SUCCESS) {
-				pageStackPop(gdata.pageStack);
+				pageStackPop(gdata->pageStack);
 				return SETTLE_SUCCESS;
 			}
 			else {
@@ -499,7 +526,7 @@ int giftSelect(FVMO gdata, Record* preOrder) {
 					recordDel(pos);
 				}
 			}
-			pageStackPop(gdata.pageStack);
+			pageStackPop(gdata->pageStack);
 			return SETTLE_BREAK;
 		case 11:
 			giftPageStart -= PageSize;
@@ -517,7 +544,7 @@ int giftSelect(FVMO gdata, Record* preOrder) {
 		//选择完毕进入结算确认页面
 	}
 }
-int salePlanSelect(FVMO gdata, Inventory* cart,bool isMember) {
+int salePlanSelect(FVMO *gdata, Inventory* cart,bool isMember) {
 	Record* preOrder = recordListInit(recordCreate()), * rec = NULL;
 	CSP* optCSP = NULL, * csp;
 	int orderPageStart = 1, optCSPPageStart = 1;
@@ -531,19 +558,19 @@ int salePlanSelect(FVMO gdata, Inventory* cart,bool isMember) {
 		rec->type = SALE;
 		listAddTail(&rec->timeList, &preOrder->timeList);
 	}
-	SSPAutoApplicate(gdata.SSP, preOrder,gdata,isMember);
-	pageStackPush(pageStackCreate("销售方案选择"), gdata.pageStack);
+	SSPAutoApplicate(gdata->SSP, preOrder,gdata,isMember);
+	pageStackPush(pageStackCreate("销售方案选择"), gdata->pageStack);
 	while (1) {
-		renderClear(gdata.renderer);
-		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
-		drawListPage(gdata.renderer, PreOrderPos, "订单", drawPreOrderList, &preOrder->timeList, &orderPageStart, PageSize, PreOrderRectSize, &gdata);
+		renderClear(gdata->renderer);
+		drawStatusBar(gdata->renderer, STATUS_ORIGIN, gdata);
+		drawListPage(gdata->renderer, PreOrderPos, "订单", drawPreOrderList, &preOrder->timeList, &orderPageStart, PageSize, PreOrderRectSize, gdata);
 		if (optCSP) {
 			CSPListClear(optCSP);
 			CSPDel(optCSP);
 		}
-		optCSP = CSPOptionalListGen(gdata.CSP, preOrder);
-		drawListPage(gdata.renderer, optCSPPos, "可用组合销售方案", drawCSPList, &optCSP->list, &optCSPPageStart, PageSize, optCSPRectSize, NULL);
-		drawMenu(gdata.renderer, SalePlanMenu, "销售方案选择", 8, 1,
+		optCSP = CSPOptionalListGen(gdata->CSP, preOrder,isMember,FVMTimerGetFVMTime(gdata->timer));
+		drawListPage(gdata->renderer, optCSPPos, "可用组合销售方案", drawCSPList, &optCSP->list, &optCSPPageStart, PageSize, optCSPRectSize, NULL);
+		drawMenu(gdata->renderer, SalePlanMenu, (Coord) { 4, PreOrderRectSize.y }, "销售方案选择", 8, 1,
 			"订单上一页",
 			"订单下一页",
 			"应用单品销售方案",
@@ -552,12 +579,12 @@ int salePlanSelect(FVMO gdata, Inventory* cart,bool isMember) {
 			"取消应用组合销售方案",
 			"下一步(赠品选择)",
 			"退出");
-		drawMenu(gdata.renderer, optCSPMenuPos, "可用组合销售方案浏览", 3, 11,
+		drawMenu(gdata->renderer, optCSPMenuPos, (Coord) { 4, optCSPRectSize.y }, "可用组合销售方案浏览", 3, 11,
 			"上一页",
 			"下一页",
 			"方案详情");
-		inputStart(gdata.renderer, INPUT_ORIGIN);
-		renderPresent(gdata.renderer);
+		inputStart(gdata->renderer, INPUT_ORIGIN);
+		renderPresent(gdata->renderer);
 		select = getSelect();
 		switch (select) {
 		case 1:
@@ -571,7 +598,7 @@ int salePlanSelect(FVMO gdata, Inventory* cart,bool isMember) {
 			SSPSelect(gdata, preOrder,isMember);
 			break;
 		case 4:
-			CSPSlect(gdata,optCSP, preOrder,isMember);
+			CSPSelect(gdata,optCSP, preOrder,isMember);
 			break;
 		case 5:
 			SSPAppCancel(preOrder);
@@ -581,7 +608,7 @@ int salePlanSelect(FVMO gdata, Inventory* cart,bool isMember) {
 			break;
 		case 7:
 			if (giftSelect(gdata, preOrder) == SETTLE_SUCCESS) {
-				pageStackPop(gdata.pageStack);
+				pageStackPop(gdata->pageStack);
 				return SETTLE_SUCCESS;
 			}
 			else {
@@ -595,7 +622,7 @@ int salePlanSelect(FVMO gdata, Inventory* cart,bool isMember) {
 			}
 			recordListClear(preOrder);
 			free(preOrder);
-			pageStackPop(gdata.pageStack);
+			pageStackPop(gdata->pageStack);
 			return SETTLE_BREAK;
 		case 11:
 			optCSPPageStart -= PageSize;
@@ -605,7 +632,7 @@ int salePlanSelect(FVMO gdata, Inventory* cart,bool isMember) {
 			optCSPPageStart += PageSize;
 			break;
 		case 13:
-			breakCatch(inputCSPID(gdata.CSP, &num, &csp)) break;
+			breakCatch(inputCSPID(gdata->CSP, &num, &csp)) break;
 			CSPDetails(csp, gdata);
 		default:
 			break;
@@ -619,27 +646,27 @@ int salePlanSelect(FVMO gdata, Inventory* cart,bool isMember) {
 	//6.结算，生成订单
 }
 
-void saleReturn(FVMO gdata) {  
+void saleReturn(FVMO *gdata) {  
 	int recID;
 	int select;
 	Record* rec;
 	do {
-		breakDeliver(inputRecordID(gdata.record, TIME_RECORDS, &recID, &rec));
+		breakDeliver(inputRecordID(gdata->record, TIME_RECORDS, &recID, &rec));
 	} while (rec->type != SALE);
 	if (strcmp(rec->addInfo, "已退货")==0) {
 		printf("该商品已退货\n");
 		getchar();
 		return;
 	}
-	Inventory* inv = invQueryID(gdata.inventory, rec->invID);
+	Inventory* inv = invQueryID(gdata->inventory, rec->invID);
 	if (!inv) {
-		invQueryID(gdata.historyInventory, rec->invID);
+		invQueryID(gdata->historyInventory, rec->invID);
 		if (!inv) return;
 		drawOrdMenu("退货商品已下架，是否重新上架?", 2, 1, "是", "否");
 		breakDeliver(getUIntInput("选择一项:", &select, (IntRange) { 1, 2 }, true));
 		if (select == 1) {
 			listRemove(&inv->list);
-			listAddTail(&inv->list, &gdata.inventory->list);
+			listAddTail(&inv->list, &gdata->inventory->list);
 		}
 	}
 
@@ -647,7 +674,7 @@ void saleReturn(FVMO gdata) {
 	updateRecord->type = UPDATE;
 	strcpy_s(rec->addInfo, INFOMAX, "已退货");
 	sprintf_s(updateRecord->addInfo, INFOMAX, "退货,对应销售记录:%d",rec->recID);
-	updateRecord->time = FVMTimerGetFVMTime(gdata.timer);
+	updateRecord->time = FVMTimerGetFVMTime(gdata->timer);
 	updateRecord->invID = inv->invID;
 	updateRecord->prod = rec->prod;
 	if (rec->prod.pack == BULK) {
@@ -660,22 +687,22 @@ void saleReturn(FVMO gdata) {
 	}
 	updateRecord->prod.unitPrice = 0;   //价格改变0
 	updateRecord->prod.amount = -rec->prod.amount;
-	financeExpend(gdata.finance, rec->prod.amount); //退钱
+	financeIncome(gdata->finance, -rec->prod.amount); //退钱
 
-	recordIDAllocate(updateRecord, gdata.record);
-	listAddTail(&updateRecord->timeList, &gdata.record->timeList);
+	recordIDAllocate(updateRecord, gdata->record);
+	listAddTail(&updateRecord->timeList, &gdata->record->timeList);
 	listAddTail(&updateRecord->IRList, &inv->invRecord->IRList);
 	printf("成功退货\n");
 	getchar();
 }
 
-void saleExchange(FVMO gdata) {
+void saleExchange(FVMO *gdata) {
 	int recID;
 	int select;
 	bool destroy = false;
 	Record* rec;
 	do {
-		breakDeliver(inputRecordID(gdata.record, TIME_RECORDS, &recID, &rec));
+		breakDeliver(inputRecordID(gdata->record, TIME_RECORDS, &recID, &rec));
 	} while (rec->type != SALE);
 	if (strcmp(rec->addInfo, "已换货")==0) {
 		printf("该商品已换货\n");
@@ -683,9 +710,9 @@ void saleExchange(FVMO gdata) {
 		return;
 	}
 	
-	Inventory* inv = invQueryID(gdata.inventory, rec->invID);
+	Inventory* inv = invQueryID(gdata->inventory, rec->invID);
 	if (!inv) {
-		invQueryID(gdata.historyInventory, rec->invID);
+		invQueryID(gdata->historyInventory, rec->invID);
 		if (!inv) return;
 		printf("换货商品已下架");
 		getchar();
@@ -710,7 +737,7 @@ void saleExchange(FVMO gdata) {
 	updateRecord->type = UPDATE;
 	strcpy_s(rec->addInfo, INFOMAX, "已换货");
 	sprintf_s(updateRecord->addInfo, INFOMAX, "换货,对应销售记录:%d", rec->recID);
-	updateRecord->time = FVMTimerGetFVMTime(gdata.timer);
+	updateRecord->time = FVMTimerGetFVMTime(gdata->timer);
 	updateRecord->invID = inv->invID;
 	updateRecord->prod = rec->prod;
 	if (destroy) {
@@ -728,14 +755,14 @@ void saleExchange(FVMO gdata) {
 	}
 	updateRecord->prod.unitPrice = 0;   //价格改变0
 	updateRecord->prod.amount = 0;
-	recordIDAllocate(updateRecord, gdata.record);
-	listAddTail(&updateRecord->timeList, &gdata.record->timeList);
+	recordIDAllocate(updateRecord, gdata->record);
+	listAddTail(&updateRecord->timeList, &gdata->record->timeList);
 	listAddTail(&updateRecord->IRList, &inv->invRecord->IRList);
 	printf("成功换货\n");
 	getchar();
 }
 static const Coord SaleRecordPos = { 2,3 };
-void saleReturnExchangePage(FVMO gdata) {
+void saleReturnExchangePage(FVMO *gdata) {
 	int inCustomFilter = 0, inInvRecord = 0;
 	int pageStart = 1, pageStartSave = 1;
 	char filterOpt[2][20] = { "记录筛选","取消筛选" };
@@ -752,22 +779,22 @@ void saleReturnExchangePage(FVMO gdata) {
 	Inventory* inv = NULL;
 	Record* rec = NULL;
 	const int timeRec = TIME_RECORDS, invRec = INV_RECORDS;
-	pageStackPush(pageStackCreate("仓管记录"), gdata.pageStack);
+	pageStackPush(pageStackCreate("仓管记录"), gdata->pageStack);
 	while (1) {
-		renderClear(gdata.renderer);
-		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
+		renderClear(gdata->renderer);
+		drawStatusBar(gdata->renderer, STATUS_ORIGIN, gdata);
 		if (inInvRecord) {
 			filterList = recordFilterListGen(invRecord, INV_RECORDS, &filter);
-			drawListPage(gdata.renderer, SaleRecordPos, "商品销售记录", drawRecordList, &filterList->IRList, &pageStart, PageSize, RecordRectSize, &invRec);
+			drawListPage(gdata->renderer, SaleRecordPos, "商品销售记录", drawRecordList, &filterList->IRList, &pageStart, PageSize, RecordRectSize, &invRec);
 		}
 		else {
-			filterList = recordFilterListGen(gdata.record, TIME_RECORDS, &filter);
-			drawListPage(gdata.renderer, SaleRecordPos, "销售记录", drawRecordList, &filterList->timeList, &pageStart, PageSize, RecordRectSize, &timeRec);
+			filterList = recordFilterListGen(gdata->record, TIME_RECORDS, &filter);
+			drawListPage(gdata->renderer, SaleRecordPos, "销售记录", drawRecordList, &filterList->timeList, &pageStart, PageSize, RecordRectSize, &timeRec);
 		}
 		recordListClear(filterList);
 		free(filterList);
 
-		drawMenu(gdata.renderer, invMenuPos, "商品退换", 7, 1,
+		drawMenu(gdata->renderer, invMenuPos, (Coord) { 3, RecordRectSize.y }, "商品退换", 7, 1,
 			"上一页",
 			"下一页",
 			filterOpt[inCustomFilter],
@@ -775,8 +802,8 @@ void saleReturnExchangePage(FVMO gdata) {
 			"商品退货",
 			"商品换货",
 			"退出");
-		inputStart(gdata.renderer, INPUT_ORIGIN);
-		renderPresent(gdata.renderer);
+		inputStart(gdata->renderer, INPUT_ORIGIN);
+		renderPresent(gdata->renderer);
 		select = getSelect();
 		switch (select)
 		{
@@ -807,7 +834,7 @@ void saleReturnExchangePage(FVMO gdata) {
 				inInvRecord = 0;
 			}
 			else {
-				breakCatch(inputInventoryID(gdata.inventory, &num, &inv)) break;
+				breakCatch(inputInventoryID(gdata->inventory, &num, &inv)) break;
 				invRecord = inv->invRecord;
 				inInvRecord = 1;
 			}
@@ -819,13 +846,13 @@ void saleReturnExchangePage(FVMO gdata) {
 			saleExchange(gdata);
 			break;
 		case 7:
-			pageStackPop(gdata.pageStack);
+			pageStackPop(gdata->pageStack);
 			return;
 		}
 
 	}
 }
-void sale(FVMO gdata) {
+void sale(FVMO *gdata) {
 	int inFilter = 0;
 	int pageStart = 1, pageStartSave = 1, cartPageStart = 1;
 	char filterOpt[2][20] = { "商品筛选","取消筛选" };
@@ -834,12 +861,12 @@ void sale(FVMO gdata) {
 	Inventory* filterList = NULL, * inv = NULL, * cart = invListInit(invCreate());
 	int select, num;
 	Product filter;
-	pageStackPush(pageStackCreate("销售系统"), gdata.pageStack);
+	pageStackPush(pageStackCreate("销售系统"), gdata->pageStack);
 	while (1) {
-		renderClear(gdata.renderer);
-		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
-		drawListPage(gdata.renderer, cartPos, "购物车", drawInvList, &cart->list, &cartPageStart, PageSize, invListRectSize, NULL);
-		drawMenu(gdata.renderer, cartMenuPos, "购物车", 6, 11,
+		renderClear(gdata->renderer);
+		drawStatusBar(gdata->renderer, STATUS_ORIGIN, gdata);
+		drawListPage(gdata->renderer, cartPos, "购物车", drawInvList, &cart->list, &cartPageStart, PageSize, invListRectSize, NULL);
+		drawMenu(gdata->renderer, cartMenuPos, (Coord) { 4, invListRectSize.y }, "购物车", 6, 11,
 			"上一页",
 			"下一页",
 			"移除商品",
@@ -847,15 +874,15 @@ void sale(FVMO gdata) {
 			memberOpt[isMember],
 			"清空购物车");
 		if (inFilter) {
-			filterList = invFilterListGen(gdata.inventory, &filter);
-			drawListPage(gdata.renderer, invListPos, "筛选信息", drawInvList, &filterList->list, &pageStart, PageSize, invListRectSize, NULL);
+			filterList = invFilterListGen(gdata->inventory, &filter);
+			drawListPage(gdata->renderer, invListPos, "筛选信息", drawInvList, &filterList->list, &pageStart, PageSize, invListRectSize, NULL);
 			invListClear(filterList);
 			free(filterList);
 		}
 		else {
-			drawListPage(gdata.renderer, invListPos, "库存信息", drawInvList, &gdata.inventory->list, &pageStart, PageSize, invListRectSize, NULL);
+			drawListPage(gdata->renderer, invListPos, "库存信息", drawInvList, &gdata->inventory->list, &pageStart, PageSize, invListRectSize, NULL);
 		}
-		drawMenu(gdata.renderer, saleMenuPos, "商品销售", 8, 1,
+		drawMenu(gdata->renderer, saleMenuPos, (Coord) { 4, invListRectSize.y },"商品销售", 8, 1,
 			"上一页",
 			"下一页",
 			filterOpt[inFilter],
@@ -864,8 +891,8 @@ void sale(FVMO gdata) {
 			"前往结算",
 			"商品退换",
 			"退出");
-		inputStart(gdata.renderer, INPUT_ORIGIN);
-		renderPresent(gdata.renderer);
+		inputStart(gdata->renderer, INPUT_ORIGIN);
+		renderPresent(gdata->renderer);
 		select = getSelect();
 		switch (select)
 		{
@@ -891,11 +918,11 @@ void sale(FVMO gdata) {
 			}
 			break;
 		case 4:
-			breakCatch(inputInventoryID(gdata.inventory, &num, &inv)) break;
+			breakCatch(inputInventoryID(gdata->inventory, &num, &inv)) break;
 			invDetails(inv, gdata);
 			break;
 		case 5:
-			cartAdd(cart, gdata.inventory);
+			cartAdd(cart, gdata->inventory);
 			break;
 		case 6:
 			if (cart->list.size >= 1) {
@@ -910,7 +937,7 @@ void sale(FVMO gdata) {
 		case 8:
 			invListClear(cart);
 			invDel(cart);
-			pageStackPop(gdata.pageStack);
+			pageStackPop(gdata->pageStack);
 			return;
 		case 11:
 			cartPageStart -= PageSize;
@@ -923,7 +950,7 @@ void sale(FVMO gdata) {
 			cartDelete(cart);
 			break;
 		case 14:
-			cartQuantityModify(cart, gdata.inventory);
+			cartQuantityModify(cart, gdata->inventory);
 			break;
 		case 15:
 			if (isMember) {

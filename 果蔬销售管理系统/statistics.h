@@ -3,5 +3,5 @@
 #include"fvm_objects.h"
 #include"UI.h"
 
-void statsPage(FVMO gdata);
+void statsPage(FVMO *gdata);
 #endif // !STATISTIC_h

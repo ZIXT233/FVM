@@ -12,7 +12,12 @@ static const char storageDir[20] = "FVMData";
 void setConsoleEnv() {
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	DWORD outMode;
-	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	CONSOLE_SCREEN_BUFFER_INFOEX csbi;
+	csbi.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+	GetConsoleScreenBufferInfoEx(hStdout, &csbi);
+	csbi.ColorTable[15] = RGB(253,246,227);
+	csbi.dwSize.X = PanelSize.y;
+	SetConsoleScreenBufferInfoEx(hStdout, &csbi);
 	GetConsoleMode(hStdout, &outMode);
 	SetConsoleMode(hStdout, (outMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING));
 	HWND hwnd = GetForegroundWindow();
@@ -76,7 +81,7 @@ int main(void) {
 	FVMO* gdata = FVMSystemInit();
 	if (!gdata) return 0;
 	FVMTimerSetClockTask(gdata->timer, clockUpdateTimeBar, gdata);
-	homepage(*gdata);
+	homepage(gdata, storageDir);
 	rendererDelete(gdata->renderer);
 	storageSaveFVMO(storageDir, gdata);
 	return 0;
@@ -93,3 +98,7 @@ int main(void) {
 //菜单大小 *
 //时间模块修改 *
 //prod中添加单位名 *
+//销售方案商品数 *
+//结算礼物// *
+//组合销售方案匹配 *
+//方案筛选:销毁记录 *

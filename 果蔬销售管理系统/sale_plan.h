@@ -51,7 +51,7 @@ CSP* CSPListInit(CSP* head);
 void CSPIDAllocate(CSP* pos, CSP* head);
 CSP* CSPQueryID(CSP* head,int id);
 bool CSPHasInvID(CSP* pos, int invID);
-CSP* CSPOptionalListGen(CSP* head, Record* preOrde);
+CSP* CSPOptionalListGen(CSP* head, Record* preOrder, bool isMember, time_t fvmtime);
 void CSPListClear(CSP* head);
 int CSPAddInv(CSP* csp, Inventory* inv);
 void CSPDel(CSP* pos);

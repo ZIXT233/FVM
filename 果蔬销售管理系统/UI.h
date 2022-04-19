@@ -8,9 +8,9 @@ static const Coord UI_ORIGIN = { 1,1 }, INPUT_ORIGIN = { 35,1 }, NAN_COORD = { -
 static const Coord PanelSize = { 35,200 };
 
 void drawRectBorder(Renderer* renderer, Coord pos, Coord const size);
-void drawMenu(Renderer* renderer, Coord pos, const char* title, int n, int firstNum, ...);
+void drawMenu(Renderer* renderer, Coord pos, Coord rectSize, const char* title, int n, int firstNum, ...);
 void drawTitleWindow(Renderer* renderer, Coord origin, const char* title, Coord rectSize);
-void drawStatusBar(Renderer* renderer, Coord origin, FVMO gdata);
+void drawStatusBar(Renderer* renderer, Coord origin, FVMO *gdata);
 
 
 typedef void (*ListDrawer) (Renderer*, Coord, ListHead*, int,void*);
@@ -30,6 +30,7 @@ void drawCellBULK(Renderer* renderer, Coord origin, CellData* cell);
 void drawCellInt(Renderer* renderer, Coord origin, CellData* cell);
 void drawCellUNIT(Renderer* renderer, Coord origin, CellData* cell);
 void drawCellStr(Renderer* renderer, Coord origin, CellData* cell);
+void drawCellQuality(Renderer* renderer, Coord origin, CellData* cell);
 void drawCellTime(Renderer* renderer, Coord origin, CellData* cell);
 void drawCellDate(Renderer* renderer, Coord origin, CellData* cell);
 void drawCellSSP(Renderer* renderer, Coord origin, CellData* cell);
@@ -61,6 +62,8 @@ void drawGiftList(Renderer* renderer, Coord origin, ListHead* entry, int pageSiz
 static const Coord invListRectSize = { 16,75 };
 void drawInvList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
 //到这里
+static const Coord invManageListRectSize = { 16,98 };
+void drawInvManageList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
 
 static const Coord RecordRectSize = { 16,120 };
 void drawRecordList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg);
