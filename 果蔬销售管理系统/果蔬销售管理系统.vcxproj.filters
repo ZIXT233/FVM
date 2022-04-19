@@ -27,111 +27,111 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.c">
+    <ClCompile Include="src\main.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="inventory.c">
+    <ClCompile Include="src\objects\inventory.c">
       <Filter>源文件\objects</Filter>
     </ClCompile>
-    <ClCompile Include="list.c">
+    <ClCompile Include="src\objects\list.c">
       <Filter>源文件\objects</Filter>
     </ClCompile>
-    <ClCompile Include="inv_manage.c">
+    <ClCompile Include="src\inv_manage.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="record.c">
+    <ClCompile Include="src\objects\record.c">
       <Filter>源文件\objects</Filter>
     </ClCompile>
-    <ClCompile Include="UI.c">
+    <ClCompile Include="src\UI.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="homepage.c">
+    <ClCompile Include="src\homepage.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="sale.c">
+    <ClCompile Include="src\sale.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="renderer.c">
+    <ClCompile Include="src\objects\renderer.c">
       <Filter>源文件\objects</Filter>
     </ClCompile>
-    <ClCompile Include="sale_plan_manage.c">
+    <ClCompile Include="src\sale_plan_manage.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="sale_plan.c">
+    <ClCompile Include="src\objects\sale_plan.c">
       <Filter>源文件\objects</Filter>
     </ClCompile>
-    <ClCompile Include="timer.c">
+    <ClCompile Include="src\timer.c">
       <Filter>源文件\objects</Filter>
     </ClCompile>
-    <ClCompile Include="finance.c">
+    <ClCompile Include="src\objects\finance.c">
       <Filter>源文件\objects</Filter>
     </ClCompile>
-    <ClCompile Include="statistic.c">
+    <ClCompile Include="src\statistic.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="data_storage.c">
+    <ClCompile Include="src\utils\data_storage.c">
       <Filter>源文件\utils</Filter>
     </ClCompile>
-    <ClCompile Include="sha256.c">
+    <ClCompile Include="src\utils\sha256.c">
       <Filter>源文件\utils</Filter>
     </ClCompile>
-    <ClCompile Include="system_manage.c">
+    <ClCompile Include="src\system_manage.c">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="sale.h">
+    <ClInclude Include="include\sale.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="UI.h">
+    <ClInclude Include="include\UI.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="statistics.h">
+    <ClInclude Include="include\statistics.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="inventory.h">
+    <ClInclude Include="include\objects\inventory.h">
       <Filter>头文件\objects</Filter>
     </ClInclude>
-    <ClInclude Include="list.h">
+    <ClInclude Include="include\objects\list.h">
       <Filter>头文件\objects</Filter>
     </ClInclude>
-    <ClInclude Include="sale_plan.h">
+    <ClInclude Include="include\objects\sale_plan.h">
       <Filter>头文件\objects</Filter>
     </ClInclude>
-    <ClInclude Include="product.h">
+    <ClInclude Include="include\objects\product.h">
       <Filter>头文件\objects</Filter>
     </ClInclude>
-    <ClInclude Include="record.h">
+    <ClInclude Include="include\objects\record.h">
       <Filter>头文件\objects</Filter>
     </ClInclude>
-    <ClInclude Include="homepage.h">
+    <ClInclude Include="include\homepage.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="fvm_objects.h">
+    <ClInclude Include="include\objects\fvm_objects.h">
       <Filter>头文件\objects</Filter>
     </ClInclude>
-    <ClInclude Include="inv_manage.h">
+    <ClInclude Include="include\inv_manage.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="renderer.h">
+    <ClInclude Include="include\objects\renderer.h">
       <Filter>头文件\objects</Filter>
     </ClInclude>
-    <ClInclude Include="sale_plan_manage.h">
+    <ClInclude Include="include\sale_plan_manage.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="timer.h">
+    <ClInclude Include="include\objects\timer.h">
       <Filter>头文件\objects</Filter>
     </ClInclude>
-    <ClInclude Include="finance.h">
+    <ClInclude Include="include\objects\finance.h">
       <Filter>头文件\objects</Filter>
     </ClInclude>
-    <ClInclude Include="data_storage.h">
+    <ClInclude Include="include\utils\data_storage.h">
       <Filter>头文件\utils</Filter>
     </ClInclude>
-    <ClInclude Include="sha256.h">
+    <ClInclude Include="include\utils\sha256.h">
       <Filter>头文件\utils</Filter>
     </ClInclude>
-    <ClInclude Include="system_manage.h">
+    <ClInclude Include="include\system_manage.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
