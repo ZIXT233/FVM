@@ -39,7 +39,7 @@ void resetBackgroundColor(Renderer* renderer) {
 	renderPrintf(renderer,CSI BACKGROUND_DEFAULT);
 }
 void _resetBackgroundColor() {
-	printf(CSI BACKGROUND_DEFAULT);
+	printf(CSI "107m");
 }
 void resetTextColor(Renderer* renderer) {
 	renderPrintf(renderer, CSI TEXT_COLOR_DEFAULT);

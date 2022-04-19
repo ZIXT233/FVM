@@ -187,6 +187,7 @@ char variety[20][100] = { "¸½Ä§","³¬ÓîÖæÒøºÓÔÔÅà","ÆÕÍ¨ÆÕÍ¨ÆÕÍ¨ÆÕÍ¨","¹ş¹ş¹ş¹ş¹ş
 void randomPurchase(FVMO *gdata) {
 	Inventory* head = gdata->inventory;
 	Inventory* inv = creatRandInv();
+	invIDAllocate(inv, head);
 	Record* rec = recordCreate();
 	rec->type = PURCHASE;
 	rec->time = FVMTimerGetFVMTime(gdata->timer);
@@ -200,7 +201,7 @@ void randomPurchase(FVMO *gdata) {
 	financeExpend(gdata->finance, rec->prod.amount);
 	listAddTail(&rec->timeList, &gdata->record->timeList);
 	listAddTail(&rec->IRList, &inv->invRecord->IRList);
-	invIDAllocate(inv, head);
+	
 	listAddTail(&inv->list, &head->list);
 	return;
 }
@@ -212,6 +213,7 @@ void purchase(FVMO *gdata) {
 		invDel(inv);
 		return;
 	}
+	invIDAllocate(inv, head);
 	Record* rec = recordCreate();
 	rec->type = PURCHASE;
 	rec->time = FVMTimerGetFVMTime(gdata->timer);
@@ -225,7 +227,6 @@ void purchase(FVMO *gdata) {
 	financeExpend(gdata->finance, rec->prod.amount);
 	listAddTail(&rec->timeList, &gdata->record->timeList);
 	listAddTail(&rec->IRList, &inv->invRecord->IRList);
-	invIDAllocate(inv, head);
 	listAddTail(&inv->list, &head->list);
 	return;
 }
