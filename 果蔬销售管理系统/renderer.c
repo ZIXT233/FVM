@@ -35,9 +35,26 @@ int renderPrintf(Renderer* renderer,const char* _Format, ...) {
 	return ret;
 }
 
-
+void resetBackgroundColor(Renderer* renderer) {
+	renderPrintf(renderer,CSI BACKGROUND_DEFAULT);
+}
+void _resetBackgroundColor() {
+	printf(CSI BACKGROUND_DEFAULT);
+}
+void resetTextColor(Renderer* renderer) {
+	renderPrintf(renderer, CSI TEXT_COLOR_DEFAULT);
+}
+void _resetTextColor() {
+    printf(CSI TEXT_COLOR_DEFAULT);
+}
 void setCursorPos(Renderer* renderer, Coord pos) {
 	renderPrintf(renderer,"\033[%d;%dH", pos.x, pos.y);
+}
+void setBackGroundColor(Renderer* renderer, int r, int g, int b) {
+	renderPrintf(renderer, CSI "48;2;%d;%d;%dm", r, g, b);
+}
+void setTextColor(Renderer* renderer, int r, int g, int b) {
+	renderPrintf(renderer, CSI "38;2;%d;%d;%dm", r, g, b);
 }
 Coord _getCursorPos() {
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -64,6 +81,8 @@ void _cls()
 	SMALL_RECT scrollRect;
 	COORD scrollTarget;
 	CHAR_INFO fill;
+	_resetBackgroundColor();
+	_resetTextColor();
 	// Get the number of character cells in the current buffer.
 	if (!GetConsoleScreenBufferInfo(hConsole, &csbi))
 	{

@@ -54,22 +54,22 @@ int SSPDelete(SSP* head) {
 	listRemove(&pos->list);
 	SSPDel(pos);
 }
-void SSPDetails(SSP* ssp,FVMO gdata) {
+void SSPDetails(SSP* ssp,FVMO *gdata) {
 	int giftPageStart = 1;
 	int select;
-	pageStackPush(pageStackCreate("单品销售方案详情"), gdata.pageStack);
+	pageStackPush(pageStackCreate("单品销售方案详情"), gdata->pageStack);
 	while (1) {
-		renderClear(gdata.renderer);
-		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
-		drawTitleWindow(gdata.renderer, SSPDetailsPos, "单品销售方案详情", SSPDetailsRectSize);
-		showSSPDetails(gdata.renderer, (Coord) { SSPDetailsPos.x + 3, SSPDetailsPos.y + 1 }, ssp);
-		drawListPage(gdata.renderer, SSPGiftPos, "赠品列表", drawGiftList, &ssp->optGifts->list, &giftPageStart, PageSize, GiftRectSize, NULL);
-		drawMenu(gdata.renderer, SSPDetailsMenuPos, "单品优惠方案详情", 3, 1,
+		renderClear(gdata->renderer);
+		drawStatusBar(gdata->renderer, STATUS_ORIGIN, gdata);
+		drawTitleWindow(gdata->renderer, SSPDetailsPos, "单品销售方案详情", SSPDetailsRectSize);
+		showSSPDetails(gdata->renderer, (Coord) { SSPDetailsPos.x + 3, SSPDetailsPos.y + 1 }, ssp);
+		drawListPage(gdata->renderer, SSPGiftPos, "赠品列表", drawGiftList, &ssp->optGifts->list, &giftPageStart, PageSize, GiftRectSize, NULL);
+		drawMenu(gdata->renderer, SSPDetailsMenuPos, (Coord) { 4, SSPDetailsRectSize.y },"单品优惠方案详情", 3, 1,
 			"赠品上一页",
 			"赠品下一页",
 			"退出");
-		inputStart(gdata.renderer, INPUT_ORIGIN);
-		renderPresent(gdata.renderer);
+		inputStart(gdata->renderer, INPUT_ORIGIN);
+		renderPresent(gdata->renderer);
 		select = getSelect();
 		switch (select)
 		{
@@ -81,7 +81,7 @@ void SSPDetails(SSP* ssp,FVMO gdata) {
 			giftPageStart += PageSize;
 			break;
 		case 3:
-			pageStackPop(gdata.pageStack);
+			pageStackPop(gdata->pageStack);
 			return;
 		default:
 			break;
@@ -132,26 +132,26 @@ int CSPDelete(CSP* head) {
 	listRemove(&pos->list);
 	CSPDel(pos);
 }
-void CSPDetails(CSP* csp,FVMO gdata) {
+void CSPDetails(CSP* csp,FVMO *gdata) {
 	int giftPageStart = 1, comInvPageStart = 1;
 	int select;
-	pageStackPush(pageStackCreate("组合销售方案详情"), gdata.pageStack);
+	pageStackPush(pageStackCreate("组合销售方案详情"), gdata->pageStack);
 	while (1) {
-		renderClear(gdata.renderer);
-		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
-		drawTitleWindow(gdata.renderer, CSPDetailsPos, "组合销售方案详情", CSPDetailsRectSize);
-		showCSPDetails(gdata.renderer, (Coord) { CSPDetailsPos.x + 3, CSPDetailsPos.y + 1 }, csp);
-		drawListPage(gdata.renderer, CSPComInvPos, "组合商品列表", drawComInvList, &csp->comInv->list, &comInvPageStart, PageSize, CSPComInvRectSize, NULL);
-		drawListPage(gdata.renderer, CSPGiftPos, "赠品列表", drawGiftList, &csp->optGifts->list, &giftPageStart, PageSize, GiftRectSize, NULL);
-		drawMenu(gdata.renderer, CSPDetailsMenuPos, "组合优惠方案详情", 6, 1,
+		renderClear(gdata->renderer);
+		drawStatusBar(gdata->renderer, STATUS_ORIGIN, gdata);
+		drawTitleWindow(gdata->renderer, CSPDetailsPos, "组合销售方案详情", CSPDetailsRectSize);
+		showCSPDetails(gdata->renderer, (Coord) { CSPDetailsPos.x + 3, CSPDetailsPos.y + 1 }, csp);
+		drawListPage(gdata->renderer, CSPComInvPos, "组合商品列表", drawComInvList, &csp->comInv->list, &comInvPageStart, PageSize, CSPComInvRectSize, NULL);
+		drawListPage(gdata->renderer, CSPGiftPos, "赠品列表", drawGiftList, &csp->optGifts->list, &giftPageStart, PageSize, GiftRectSize, NULL);
+		drawMenu(gdata->renderer, CSPDetailsMenuPos, (Coord) { 7, CSPDetailsRectSize.y }, "组合优惠方案详情", 6, 1,
 			"组合商品上一页",
 			"组合商品下一页",
 			"退出",
 			"赠品上一页",
 			"赠品下一页",
 			"退出");
-		inputStart(gdata.renderer, INPUT_ORIGIN);
-		renderPresent(gdata.renderer);
+		inputStart(gdata->renderer, INPUT_ORIGIN);
+		renderPresent(gdata->renderer);
 		select = getSelect();
 		switch (select)
 		{
@@ -172,14 +172,14 @@ void CSPDetails(CSP* csp,FVMO gdata) {
 			giftPageStart += PageSize;
 			break;
 		case 6:
-			pageStackPop(gdata.pageStack);
+			pageStackPop(gdata->pageStack);
 			return;
 		default:
 			break;
 		}
 	}
 }
-void salePlanManage(FVMO gdata) {
+void salePlanManage(FVMO *gdata) {
 	int inFilter = 0;
 	int SSPPageStart = 1, CSPPageStart = 1;
 	int invPageStart = 1, invPageStartSave;
@@ -189,43 +189,43 @@ void salePlanManage(FVMO gdata) {
 	Inventory* filterList = NULL, * inv = NULL;
 	int select, num;
 	Product filter;
-	pageStackPush(pageStackCreate("销售方案管理"), gdata.pageStack);
+	pageStackPush(pageStackCreate("销售方案管理"), gdata->pageStack);
 	while (1) {
-		renderClear(gdata.renderer);
-		drawStatusBar(gdata.renderer, STATUS_ORIGIN, gdata);
-		drawListPage(gdata.renderer, SSPListPos, "单品销售方案列表", drawSSPList,
-			&gdata.SSP->list, &SSPPageStart, PageSize, SSPRectSize, NULL);
-		drawListPage(gdata.renderer, CSPListPos, "组合销售方案列表", drawCSPList,
-			&gdata.CSP->list, &CSPPageStart, PageSize, CSPRectSize, NULL);
+		renderClear(gdata->renderer);
+		drawStatusBar(gdata->renderer, STATUS_ORIGIN, gdata);
+		drawListPage(gdata->renderer, SSPListPos, "单品销售方案列表", drawSSPList,
+			&gdata->SSP->list, &SSPPageStart, PageSize, SSPRectSize, NULL);
+		drawListPage(gdata->renderer, CSPListPos, "组合销售方案列表", drawCSPList,
+			&gdata->CSP->list, &CSPPageStart, PageSize, CSPRectSize, NULL);
 		if (inFilter) {
-			filterList = invFilterListGen(gdata.inventory, &filter);
-			drawListPage(gdata.renderer, invListPos, "筛选信息", drawInvList, &filterList->list, &invPageStart, PageSize, invListRectSize, NULL);
+			filterList = invFilterListGen(gdata->inventory, &filter);
+			drawListPage(gdata->renderer, invListPos, "筛选信息", drawInvList, &filterList->list, &invPageStart, PageSize, invListRectSize, NULL);
 			invListClear(filterList);
 			free(filterList);
 		}
 		else {
-			drawListPage(gdata.renderer, invListPos, "库存信息", drawInvList, &gdata.inventory->list, &invPageStart, PageSize, invListRectSize, NULL);
+			drawListPage(gdata->renderer, invListPos, "库存信息", drawInvList, &gdata->inventory->list, &invPageStart, PageSize, invListRectSize, NULL);
 		}
-		drawMenu(gdata.renderer, SSPMenuPos, "单品销售方案管理", 6, 1,
+		drawMenu(gdata->renderer, SSPMenuPos, (Coord) { 7, SSPRectSize.y }, "单品销售方案管理", 6, 1,
 			"上一页",
 			"下一页",
 			"查看详情",
 			"添加单品销售方案",
 			"删除单品销售方案",
 			"退出");
-		drawMenu(gdata.renderer, CSPMenuPos, "组合销售方案管理", 5, 11,
+		drawMenu(gdata->renderer, CSPMenuPos, (Coord) { 6, CSPRectSize.y },"组合销售方案管理", 5, 11,
 			"上一页",
 			"下一页",
 			"查看详情",
 			"添加组合销售方案",
 			"删除组合销售方案");
-		drawMenu(gdata.renderer, invMenuPos, "商品销售", 4, 21,
+		drawMenu(gdata->renderer, invMenuPos, (Coord) { 5, invListRectSize.y }, "库存浏览", 4, 21,
 			"上一页",
 			"下一页",
 			filterOpt[inFilter],
 			"商品详情");
-		inputStart(gdata.renderer, INPUT_ORIGIN);
-		renderPresent(gdata.renderer);
+		inputStart(gdata->renderer, INPUT_ORIGIN);
+		renderPresent(gdata->renderer);
 		select = getSelect();
 		switch (select)
 		{
@@ -237,17 +237,17 @@ void salePlanManage(FVMO gdata) {
 			SSPPageStart += PageSize;
 			break;
 		case 3:
-			breakCatch(inputSSPID(gdata.SSP, &num, &ssp)) break;
+			breakCatch(inputSSPID(gdata->SSP, &num, &ssp)) break;
 			SSPDetails(ssp,gdata);
 			break;
 		case 4:
-			SSPAdd(gdata.SSP, gdata.inventory);
+			SSPAdd(gdata->SSP, gdata->inventory);
 			break;
 		case 5:
-			SSPDelete(gdata.SSP);
+			SSPDelete(gdata->SSP);
 			break;
 		case 6:
-			pageStackPop(gdata.pageStack);
+			pageStackPop(gdata->pageStack);
 			return;
 		case 11:
 			CSPPageStart -= PageSize;
@@ -257,14 +257,14 @@ void salePlanManage(FVMO gdata) {
 			CSPPageStart += PageSize;
 			break;
 		case 13:
-			breakCatch(inputCSPID(gdata.CSP, &num, &csp)) break;
+			breakCatch(inputCSPID(gdata->CSP, &num, &csp)) break;
 			CSPDetails(csp,gdata);
 			break;
 		case 14:
-			CSPAdd(gdata.CSP, gdata.inventory);
+			CSPAdd(gdata->CSP, gdata->inventory);
 			break;
 		case 15:
-			CSPDelete(gdata.CSP);
+			CSPDelete(gdata->CSP);
 			break;
 		case 21:
 			invPageStart -= PageSize;
@@ -288,8 +288,8 @@ void salePlanManage(FVMO gdata) {
 			}
 			break;
 		case 24:
-			breakCatch(inputInventoryID(gdata.inventory, &num, &inv)) break;
-			invDetails(gdata.renderer, inv);
+			breakCatch(inputInventoryID(gdata->inventory, &num, &inv)) break;
+			invDetails(gdata->renderer, inv);
 			break;
 		default:
 			break;

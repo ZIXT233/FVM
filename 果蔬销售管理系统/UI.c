@@ -5,25 +5,13 @@
 #include"UI.h"
 #include"renderer.h"
 
-#define ESC "\033"
-#define CSI "\033["
 
 
-
-
-
-
-
-void setTextColor(Renderer* renderer, int r, int g, int b) {
-	renderPrintf(renderer, "\033[38;2;%d;%d;%dm", r, g, b);
-}
-void resetTextColor(Renderer* renderer) {
-	renderPrintf(renderer, "\033[39m");
-}
 
 void drawRectBorder(Renderer* renderer, Coord pos, Coord const size) {
 	renderPrintf(renderer, ESC "(0");
-	renderPrintf(renderer, CSI "49;94m");
+	resetBackgroundColor(renderer);
+	setTextColor(renderer, 59, 120, 255);
 	setCursorPos(renderer, pos);
 	coordPrintf(renderer, pos, "l");
 	for (int i = 1; i <= size.y; i++) {
@@ -43,7 +31,8 @@ void drawRectBorder(Renderer* renderer, Coord pos, Coord const size) {
 		renderPrintf(renderer, "q");
 	}
 	renderPrintf(renderer, "j");
-	renderPrintf(renderer, CSI "0m");
+	resetBackgroundColor(renderer);
+	resetTextColor(renderer);
 	renderPrintf(renderer, ESC "(B");
 	pos.x++;
 	setCursorPos(renderer, pos);
@@ -59,25 +48,28 @@ void drawVerticalLine(Renderer* renderer, Coord pos, int height) {
 	}
 	renderPrintf(renderer, ESC "(B");
 }
-void drawMenu(Renderer* renderer, Coord origin, const char* title, int n, int firstNum, ...) {
+void drawMenu(Renderer* renderer, Coord origin,Coord rectSize, const char* title, int n, int firstNum, ...) {
 	va_list args;
 	va_start(args, firstNum);
-	Coord rectSize;
-	rectSize.x = n + 1;
-	rectSize.y = 62;
 	drawRectBorder(renderer, origin, rectSize);
-	origin.x++;
-	origin.y++;
-	coordPrintf(renderer, origin, "%s", title);
-	origin.x++;
-	for (int i = 0; i < n; i++) {
-		char* item = va_arg(args, char*);
-		coordPrintf(renderer, origin, "\t%d.%s", firstNum + i, item);
-		origin.x++;
+	coordPrintf(renderer, (Coord) { origin.x, origin.y + 2 }, "%s", title);
+	Coord itemRect = rectSize,itemPos=origin,cur;
+	itemRect.x--,itemRect.y -= 4;
+	itemPos.x += 2, itemPos.y+=4;
+	int cols = ((n - 1) / (itemRect.x)) + 1,itemWidth=itemRect.y/cols,itemHight=1;
+	if (n < itemRect.x) {
+		itemHight = itemRect.x / n;
 	}
-	origin.y--;
-	origin.x++;
-	setCursorPos(renderer, origin);
+	cur = itemPos;
+	for (int i = 1,num=firstNum; i <= cols; i++) {
+		for (int j = 1; j <= itemRect.x&&num<firstNum+n; j++) {
+			char* item = va_arg(args, char*);
+			coordPrintf(renderer, cur, "%d.%s", num++, item);
+			cur.x+=itemHight;
+		}
+		cur.x = itemPos.x;
+		cur.y += itemWidth;
+	}
 }
 
 
@@ -149,7 +141,7 @@ void drawInvList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize
 		}
 		CellData cellData[5] = { {drawCellStr,14,0,pos->prod.kind} ,
 									{drawCellStr,14,0,pos->prod.variety},
-									{drawCellDouble,14,1,&pos->prod.unitPrice},
+									{drawCellDouble,14,0,&pos->prod.unitPrice},
 									{drawCellInt,14,0,&pos->invID},
 									{packDrawer,14,0,qw,pos->prod.unitName} };
 		if (n & 1)drawColorBar(renderer, cur, 238, 232, 213, invListRectSize.y);
@@ -159,7 +151,42 @@ void drawInvList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize
 		n++;
 	}
 }
+void drawInvManageList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg) {
+	Inventory* start = listEntry(entry, Inventory, list);
+	Coord cur = origin;
+	CellData cellName[7] = { {drawCellStr,14,0,"种类"} ,{drawCellStr,14,0,"品种"},{drawCellStr,14,0,"销售单价"},
+		{drawCellStr,14,0,"ID"},{drawCellStr,7,0,"品质"},{drawCellStr,14,0,"保质期"}, {drawCellStr,14,0,"数量"} };
+	drawColorBar(renderer, cur, 238, 232, 213, invManageListRectSize.y);
+	drawListItem(renderer, cur, cellName, 7);
+	cur.x++;
+	CellDataDrawer packDrawer = NULL;
+	int n = 0;
+	void* qw = NULL;
 
+	listForEachEntry(Inventory, pos, &(start->list), list) {
+		if (n == pageSize) break;
+		if (pos->prod.pack == BULK) {
+			qw = &pos->prod.weight;
+			packDrawer = drawCellBULK;
+		}
+		else if (pos->prod.pack == UNIT) {
+			qw = &pos->prod.quantity;
+			packDrawer = drawCellUNIT;
+		}
+		CellData cellData[7] = { {drawCellStr,14,0,pos->prod.kind} ,
+									{drawCellStr,14,0,pos->prod.variety},
+									{drawCellDouble,14,0,&pos->prod.unitPrice},
+									{drawCellInt,14,0,&pos->invID},
+									{drawCellQuality,7,0,&pos->prod.quality},
+									{drawCellDate,14,0,&pos->prod.expiration},
+									{packDrawer,14,0,qw,pos->prod.unitName} };
+		if (n & 1)drawColorBar(renderer, cur, 238, 232, 213, invManageListRectSize.y);
+		else resetBackgroundColor(renderer);
+		drawListItem(renderer, cur, cellData, 7);
+		cur.x++;
+		n++;
+	}
+}
 
 void drawRecordList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg) {
 	Record* start = NULL;
@@ -398,15 +425,15 @@ void drawPreOrderList(Renderer* renderer, Coord origin, ListHead* entry, int pag
 
 void drawColorBar(Renderer* renderer, Coord origin, int r, int g, int b, int length) {
 	setCursorPos(renderer, origin);
-	renderPrintf(renderer, CSI "48;2;%d;%d;%dm", r, g, b);
+	setBackGroundColor(renderer, r, g, b);
 	for (int i = 0; i < length; i++) {
 		renderPrintf(renderer, " ");
 	}
 
 }
-void resetBackgroundColor(Renderer* renderer) {
+/*void resetBackgroundColor(Renderer* renderer) {
 	renderPrintf(renderer, CSI "49m");
-}
+}*/
 
 void drawCellDouble(Renderer* renderer, Coord origin, CellData* cell) {
 	double data = *(double*)cell->data;
@@ -444,6 +471,11 @@ void drawCellPackStr(Renderer* renderer, Coord origin, CellData* cell) {
 	int data = *(int*)cell->data;;
 	if (data == BULK) coordPrintf(renderer, origin, " 散装");
 	else if (data == UNIT) coordPrintf(renderer, origin, " 单元装");
+}
+
+void drawCellQuality(Renderer* renderer, Coord origin, CellData* cell) {
+	int data = *(int*)cell->data;
+	coordPrintf(renderer, origin, " %s", qualityText[data]);
 }
 void drawCellTime(Renderer* renderer, Coord origin, CellData* cell) {
 	time_t data = *(time_t*)cell->data;
@@ -636,28 +668,33 @@ void drawTimeBar(Renderer* renderer, FVMTimer* timer) {
 	struct tm sti;
 	ti = FVMTimerGetFVMTime(timer);
 	localtime_s(&sti, &ti);
-	renderPrintf(renderer, CSI "104;93m" CSI "s" CSI "?25l");
+	setTextColor(renderer, 253, 246, 227);
+	setBackGroundColor(renderer, 59, 120, 255);
+	renderPrintf(renderer, CSI "s" CSI "?25l");
 	renderPrintf(renderer, CSI "%d;%dH", STATUS_ORIGIN.x, STATUS_ORIGIN.y + 4);
 	renderPrintf(renderer, "%02d:%02d:%02d", sti.tm_hour, sti.tm_min, sti.tm_sec);
 	renderPrintf(renderer, CSI "%d;%dH", STATUS_ORIGIN.x, PanelSize.y - 10);
 	renderPrintf(renderer, "%d/%d/%d", sti.tm_year + 1900, sti.tm_mon + 1, sti.tm_mday);
-	renderPrintf(renderer, CSI "u" CSI "?25h" CSI "0m");
+	renderPrintf(renderer, CSI "u" CSI "?25h" );
+	resetBackgroundColor(renderer);
+	resetTextColor(renderer);
 }
-void drawStatusBar(Renderer* renderer, Coord origin, FVMO gdata) {
+void drawStatusBar(Renderer* renderer, Coord origin, FVMO *gdata) {
 	setCursorPos(renderer, origin);
-	renderPrintf(renderer, CSI "104;93m");
+	setTextColor(renderer, 253, 246, 227);
+	setBackGroundColor(renderer, 59, 120, 255);
 	for (int i = 0; i < PanelSize.y; i++) {
 		renderPrintf(renderer, " ");
 	}
 	Coord pageStatusPos = origin;
 	pageStatusPos.y += 15;
 	setCursorPos(renderer, pageStatusPos);
-	listForEachEntry(PageStack, pos, &gdata.pageStack->list, list) {
+	listForEachEntry(PageStack, pos, &gdata->pageStack->list, list) {
 		renderPrintf(renderer, "/");
 		renderPrintf(renderer, "%s", pos->pageName);
 	}
-	drawTimeBar(renderer, gdata.timer);
-	renderPrintf(renderer, CSI "0m");
+	drawTimeBar(renderer, gdata->timer);
+	resetBackgroundColor(renderer);
 }
 
 void inputStart(Renderer* renderer, Coord inputOrigin) {
@@ -668,14 +705,13 @@ void inputStart(Renderer* renderer, Coord inputOrigin) {
 		renderPrintf(renderer, "q");
 	}
 	Coord bottom = inputOrigin;
-	bottom.x += 10;
+	bottom.x += 15;
 	setCursorPos(renderer, bottom);
 	for (int i = 0; i < PanelSize.y; i++) {
 		renderPrintf(renderer, "q");
 	}
 	renderPrintf(renderer, ESC "(B");
 	renderPrintf(renderer, CSI "%d;%dr", inputOrigin.x + 1, bottom.x - 1);
-	renderPrintf(renderer, CSI "%d;%dH", inputOrigin.x + 1, inputOrigin.y);
 	inputOrigin.x++;
 	setCursorPos(renderer, inputOrigin);
 }
@@ -931,7 +967,8 @@ int inputCSPID(const CSP* head, int* id, CSP** pCSP) {
 int inputProduct(Product* prod) {
 	breakDeliver(getStrInput("输入种类:", prod->kind, INFOMAX, true));
 	breakDeliver(getStrInput("输入品种:", prod->variety, INFOMAX, true));
-	breakDeliver(getDateTime("输入过期时间(年.月.日):", &prod->expiration, true));
+	breakDeliver(getDateTime("输入保质期(年.月.日):", &prod->expiration, true));
+	prod->expiration += 3600 * 24 - 1;
 	drawOrdMenu("品质:", 3, 1, "优", "良", "差");
 	breakDeliver(getUIntInput("选择品质:", &prod->quality, (IntRange) { 1, 3 }, true));
 	drawOrdMenu("包装方式:", 2, 1, "散装", "单元装");
@@ -985,7 +1022,7 @@ int inputProductFilter(Product* prod) {
 	prod->expiration = TIME_NAN;
 	breakDeliver(getStrInput("输入种类(默认不限):", prod->kind, INFOMAX, false));
 	breakDeliver(getStrInput("输入品种(默认不限):", prod->variety, INFOMAX, false));
-	breakDeliver(getDateTime("在此日期及之前过期(年.月.日)(默认不限) : ", &prod->expiration, false));
+	breakDeliver(getDateTime("保质期在此日期及之前(年.月.日)(默认不限) : ", &prod->expiration, false));
 	if (prod->expiration != TIME_NAN) prod->expiration += 3600 * 24 - 1; //确保大于等于当天所有时间
 	drawOrdMenu("品质:", 4, 0, "不限", "优", "良", "差");
 	breakDeliver(getUIntInput("输入品质(默认不限):", &prod->quality, (IntRange) { 1, 3 }, false));
@@ -1025,7 +1062,7 @@ void showProductDetails(Renderer* renderer, Coord pos, Product* prod, int lineNu
 	CellData cellName[6][2] = { {{drawCellStr,12,0,"种类"},{drawCellStr,valWidth,0,&prod->kind}},
 								{{drawCellStr,12,0,"品种"},{drawCellStr,valWidth,1,&prod->variety}},
 								{{drawCellStr,12,0,"品质"},{drawCellStr,valWidth,0,&qualityText[prod->quality]}},
-								{{drawCellStr,12,0,"过期日期"},{drawCellDate,valWidth,1,&prod->expiration}},
+								{{drawCellStr,12,0,"保质期"},{drawCellDate,valWidth,1,&prod->expiration}},
 								{{drawCellStr,12,0,"包装方式"},{drawCellStr,valWidth,0,"散装"}},
 								{{drawCellStr,12,0,"包装方式"},{drawCellStr,valWidth,0,"单元装"}}
 	};
@@ -1094,7 +1131,7 @@ void showSSPDetails(Renderer* renderer, Coord pos, SSP* ssp) {
 		/*1*/	{{drawCellStr,18,0,"类型"},{drawCellStr,valWidth,0,"批量应用于满足条件的商品"}},
 				{{drawCellStr,18,0,"应用商品ID"},{drawCellInt,valWidth,0,&ssp->invID}},
 				{{drawCellStr,18,0,"种类"} , { drawCellStr,valWidth,0, ssp->filter.kind } },
-				{{drawCellStr,18,0,"在此日期及前过期"},{drawCellDate,valWidth,0,&ssp->filter.expiration}},
+				{{drawCellStr,18,0,"保质期在此及之前"},{drawCellDate,valWidth,0,&ssp->filter.expiration}},
 		/*5*/    {{drawCellStr,18,0,"品种"} ,{ drawCellStr, valWidth, 0, ssp->filter.variety }},
 				 {{drawCellStr,18,0,"品质"},{ drawCellStr,valWidth,0,qualityText[ssp->filter.quality]}},
 				 {{drawCellStr,18,0,"包装方式"}, { drawCellPackStr, valWidth, 0,&ssp->filter.pack }},
@@ -1267,9 +1304,9 @@ void showSSPDetails(Renderer* renderer, Coord pos, SSP* ssp) {
 		else coordPrintf(renderer, pos, "品种:不限"), pos.x++;
 		if (ssp->filter.expiration != TIME_NAN) {
 			localtime_s(&date, &ssp->filter.expiration);
-			coordPrintf(renderer, pos, "在此日期及前过期:%d.%d.%d", date.tm_year + 1900, date.tm_mon + 1, date.tm_mday), pos.x++;
+			coordPrintf(renderer, pos, "保质期在此日期及之前:%d.%d.%d", date.tm_year + 1900, date.tm_mon + 1, date.tm_mday), pos.x++;
 		}
-		else coordPrintf(renderer, pos, "在此日期及前过期:不限"), pos.x++;
+		else coordPrintf(renderer, pos, "保质期在此日期及之前:不限"), pos.x++;
 		if (ssp->filter.quality) coordPrintf(renderer, pos, "品质:%s", qualityText[ssp->filter.quality]), pos.x++;
 		else coordPrintf(renderer, pos, "品质:不限"), pos.x++;
 		if (ssp->filter.pack) coordPrintf(renderer, pos, "包装方式:%s", packText[ssp->filter.pack]), pos.x++;
