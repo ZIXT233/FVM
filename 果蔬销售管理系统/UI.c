@@ -1364,6 +1364,7 @@ void showRecordDetails(Renderer* renderer, Coord pos, Record* rec) {
 		packDrawer = drawCellUNIT;
 		qw = &rec->prod.quantity;
 	}
+	int valWidth = ProdDetailsRectSize.y - 13;
 	CellData cellName[8][2] =
 	{ {{drawCellStr,12,0,"记录ID"},{drawCellInt,12,0,&rec->recID}},
 	  {{drawCellStr,12,0,"商品ID"},{drawCellInt,12,0,&rec->invID}},
@@ -1372,7 +1373,7 @@ void showRecordDetails(Renderer* renderer, Coord pos, Record* rec) {
 	  {{drawCellStr,12,0,&typeQuantityText[rec->type]},{packDrawer,12,0,qw,rec->prod.unitName}},
 	  {{drawCellStr,12,0,&typeUpriceText[rec->type]},{drawCellDouble,12,0,&rec->prod.unitPrice}},
 	  {{drawCellStr,12,0,&typeAmountText[rec->type]},{drawCellDouble,12,0,&rec->prod.amount}},
-	  {{drawCellStr,12,0,"附加信息"},{drawCellStr,12,0,&rec->addInfo}}
+	  {{drawCellStr,12,0,"附加信息"},{drawCellStr,valWidth,0,&rec->addInfo}}
 	};
 	for (int i = 0, line = 0; i < 8; i++)
 	{
