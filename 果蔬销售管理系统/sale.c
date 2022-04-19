@@ -435,7 +435,7 @@ int giftSelect(FVMO *gdata, Record* preOrder) {
 		renderClear(gdata->renderer);
 		drawStatusBar(gdata->renderer, STATUS_ORIGIN, gdata);
 		drawListPage(gdata->renderer, PreOrderPos, "¶©µ¥", drawPreOrderList, &preOrder->timeList, &orderPageStart, PageSize, PreOrderRectSize, gdata);
-
+		ssp = csp = NULL;
 		if (sspidCur < sspidSize) {
 			ssp = SSPQueryID(gdata->SSP, sspid[sspidCur]);
 			csp = NULL;
