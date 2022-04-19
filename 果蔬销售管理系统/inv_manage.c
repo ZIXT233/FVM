@@ -187,7 +187,6 @@ char variety[20][100] = { "¸½Ä§","³¬ÓîÖæÒøºÓÔÔÅà","ÆÕÍ¨ÆÕÍ¨ÆÕÍ¨ÆÕÍ¨","¹ş¹ş¹ş¹ş¹ş
 void randomPurchase(FVMO *gdata) {
 	Inventory* head = gdata->inventory;
 	Inventory* inv = creatRandInv();
-	invIDAllocate(inv, head);
 	Record* rec = recordCreate();
 	rec->type = PURCHASE;
 	rec->time = FVMTimerGetFVMTime(gdata->timer);
@@ -200,17 +199,17 @@ void randomPurchase(FVMO *gdata) {
 	else if (inv->prod.pack == BULK) rec->prod.amount = centRound(inv->prod.weight * inv->prod.purUPrice);
 	financeExpend(gdata->finance, rec->prod.amount);
 	listAddTail(&rec->timeList, &gdata->record->timeList);
-	listAddTail(&rec->IRList, &inv->invRecord->IRList);;
+	listAddTail(&rec->IRList, &inv->invRecord->IRList);
+	invIDAllocate(inv, head);
 	listAddTail(&inv->list, &head->list);
 	return;
 }
 void purchase(FVMO *gdata) {
 	Inventory* head = gdata->inventory;
 	Inventory* inv = invCreate();
-
-	invIDAllocate(inv, head);
 	inv->prod.weight = inv->prod.quantity = 0;
 	breakCatch(inputProduct(&inv->prod)) {
+		invDel(inv);
 		return;
 	}
 	Record* rec = recordCreate();
@@ -225,7 +224,8 @@ void purchase(FVMO *gdata) {
 	else if (inv->prod.pack == BULK) rec->prod.amount = centRound(inv->prod.weight * inv->prod.purUPrice);
 	financeExpend(gdata->finance, rec->prod.amount);
 	listAddTail(&rec->timeList, &gdata->record->timeList);
-	listAddTail(&rec->IRList, &inv->invRecord->IRList);;
+	listAddTail(&rec->IRList, &inv->invRecord->IRList);
+	invIDAllocate(inv, head);
 	listAddTail(&inv->list, &head->list);
 	return;
 }
