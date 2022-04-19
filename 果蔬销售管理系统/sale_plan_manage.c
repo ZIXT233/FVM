@@ -103,6 +103,11 @@ int CSPAdd(CSP* head, Inventory* invHead) {
 			printf("不能重复添加商品\n");
 		}
 	}
+	if (csp->comInv->list.size<=1) {
+		printf("至少添加两种商品\n");
+		getchar();
+		return;
+	}
 	drawOrdMenu("是否可叠加单件优惠:", 2, 1, "是", "否");
 	csp->overlaySingleSP = 1;
 	breakDeliver(getUIntInput("选择一项(默认为是):", &csp->overlaySingleSP, (IntRange) { 1, 2 }, false));

@@ -85,13 +85,13 @@ int invRecCheck(const Inventory* inv, char* errmsg) {
 		}
 		if (pos->prod.pack == BULK) {
 			if (pos->type == SALE) {
-				if (!fEqual(pos->prod.weight * pos->prod.unitPrice * pos->discount, pos->prod.amount)) {
+				if (!fEqual(centRound(pos->prod.weight * pos->prod.unitPrice * pos->discount), pos->prod.amount)) {
 					strcpy_s(errmsg, INV_CHECK_MSG_MAX, "此记录金额信息不正确");
 					return pos->recID;
 				}
 			}
 			else if (pos->type != UPDATE) {
-				if (!fEqual(pos->prod.weight * pos->prod.unitPrice, pos->prod.amount)) {
+				if (!fEqual(centRound(pos->prod.weight * pos->prod.unitPrice), pos->prod.amount)) {
 					strcpy_s(errmsg, INV_CHECK_MSG_MAX, "此记录金额信息不正确");
 					return pos->recID;
 				}
@@ -99,18 +99,19 @@ int invRecCheck(const Inventory* inv, char* errmsg) {
 			weight += recordTypeProdDirect[pos->type] * pos->prod.weight;
 			if (weight < 0) {
 				strcpy_s(errmsg, INV_CHECK_MSG_MAX, "依此记录，商品库存在此位置为负");
+
 				return pos->recID;
 			}
 		}
 		else if (pos->prod.pack == UNIT) {
 			if (pos->type == SALE) {
-				if (pos->prod.quantity * pos->prod.unitPrice * pos->discount!= pos->prod.amount) {
+				if (!fEqual(centRound(pos->prod.quantity * pos->prod.unitPrice * pos->discount), pos->prod.amount)) {
 					strcpy_s(errmsg, INV_CHECK_MSG_MAX, "此记录金额信息不正确");
 					return pos->recID;
 				}
 			}
 			else if(pos->type!=UPDATE){
-				if (pos->prod.quantity * pos->prod.unitPrice!= pos->prod.amount) {
+				if (!fEqual(centRound(pos->prod.quantity * pos->prod.unitPrice) , pos->prod.amount)) {
 					strcpy_s(errmsg, INV_CHECK_MSG_MAX, "此记录金额信息不正确");
 					return pos->recID;
 				}

@@ -18,7 +18,7 @@ int cartAdd(Inventory* cart, Inventory* head) {
 				getchar();
 				return -1;
 			}
-			breakDeliver(getUIntInput("请输入购买数量:", &quantity, (IntRange) { 0, inv->prod.quantity }, true));
+			breakDeliver(getUIntInput("请输入购买数量:", &quantity, (IntRange) { 1, inv->prod.quantity }, true));
 			item = invCopyCreate(inv);
 			item->prod.quantity = quantity;
 			item->prod.amount = item->prod.quantity * item->prod.unitPrice;
@@ -30,8 +30,14 @@ int cartAdd(Inventory* cart, Inventory* head) {
 				return -1;
 			}
 			breakDeliver(getDoubleInput("请输入购买重量:", &weight, (DoubleRange) { 0, inv->prod.weight }, true));
+			
+			weight=centRound(weight);
+			if (fEqual(weight, 0)) {
+				printf("购买量太少");
+				getchar();
+				return -1;
+			}
 			item = invCopyCreate(inv);
-			centRound(weight);
 			item->prod.weight = weight;
 			item->prod.amount = item->prod.weight * item->prod.unitPrice;
 		}
@@ -44,7 +50,7 @@ int cartAdd(Inventory* cart, Inventory* head) {
 				getchar();
 				return -1;
 			}
-			breakDeliver(getUIntInput("请输入购买数量:", &quantity, (IntRange) { 0, inv->prod.quantity - item->prod.quantity }, true)); //确保增加后不超出库存量
+			breakDeliver(getUIntInput("请输入购买数量:", &quantity, (IntRange) { 1, inv->prod.quantity - item->prod.quantity }, true)); //确保增加后不超出库存量
 			item->prod.quantity += quantity;
 			item->prod.amount = item->prod.quantity * item->prod.unitPrice;
 		}
@@ -55,7 +61,13 @@ int cartAdd(Inventory* cart, Inventory* head) {
 				return -1;
 			}
 			breakDeliver(getDoubleInput("请输入购买重量:", &weight, (DoubleRange) { 0, inv->prod.weight - item->prod.weight }, true));
-			centRound(weight);
+			
+			weight=centRound(weight);
+			if (fEqual(weight, 0)) {
+				printf("购买量太少");
+				getchar();
+				return -1;
+			}
 			item->prod.weight = item->prod.weight + weight;
 			item->prod.amount = item->prod.weight * item->prod.unitPrice;
 		}
@@ -151,7 +163,7 @@ int SSPSelect(FVMO *gdata, Record* preOrder,bool isMember) {
 		rec->SSPID = ssp->SSPID;
 	}
 }
-int CSPSlect(FVMO *gdata,CSP* optCSP, Record* preOrder,bool isMember) {
+int CSPSelect(FVMO *gdata,CSP* optCSP, Record* preOrder,bool isMember) {
 	CSP* csp;
 	int cspID;
 	breakDeliver(inputCSPID(optCSP, &cspID, &csp));
@@ -328,19 +340,34 @@ int giftAddToOrder(FVMO *gdata, Record* preOrder, Inventory* gift, int SSPID, in
 	Inventory* inv = NULL;
 	Record* rec = NULL;
 	int mul = 1;
+	int cartQuantity;
+	double cartWeight;
 	if (gift->prod.unitPrice) {
 		breakDeliver(getUIntInput("该赠品为余额赠品，请输入份数(默认一份):", &mul, QRANGE, false));
 	}
 	if (inv = invQueryID(gdata->inventory, gift->invID)) {
+		
 		if (gift->prod.pack == BULK) {
-			if (gift->prod.weight * mul > inv->prod.weight) {
+			cartWeight = 0;
+			listForEachEntry(Record, pos, &preOrder->timeList, timeList) {
+				if (pos->invID == inv->invID) {
+					cartWeight += pos->prod.weight;
+				}
+			}
+			if (fGreater(gift->prod.weight * mul+cartWeight , inv->prod.weight)) {
 				printf("库存余量不足(任意键返回)\n");
 				getchar();
 				return -1;
 			}
 		}
 		else if (gift->prod.pack == UNIT) {
-			if (gift->prod.quantity * mul > inv->prod.quantity) {
+			cartQuantity = 0;
+			listForEachEntry(Record, pos, &preOrder->timeList, timeList) {
+				if (pos->invID == inv->invID) {
+					cartQuantity += pos->prod.quantity;
+				}
+			}
+			if (gift->prod.quantity * mul+cartQuantity > inv->prod.quantity) {
 				printf("库存余量不足(任意键返回)\n");
 				getchar();
 				return -1;
@@ -541,7 +568,7 @@ int salePlanSelect(FVMO *gdata, Inventory* cart,bool isMember) {
 			CSPListClear(optCSP);
 			CSPDel(optCSP);
 		}
-		optCSP = CSPOptionalListGen(gdata->CSP, preOrder);
+		optCSP = CSPOptionalListGen(gdata->CSP, preOrder,isMember,FVMTimerGetFVMTime(gdata->timer));
 		drawListPage(gdata->renderer, optCSPPos, "可用组合销售方案", drawCSPList, &optCSP->list, &optCSPPageStart, PageSize, optCSPRectSize, NULL);
 		drawMenu(gdata->renderer, SalePlanMenu, (Coord) { 4, PreOrderRectSize.y }, "销售方案选择", 8, 1,
 			"订单上一页",
@@ -571,7 +598,7 @@ int salePlanSelect(FVMO *gdata, Inventory* cart,bool isMember) {
 			SSPSelect(gdata, preOrder,isMember);
 			break;
 		case 4:
-			CSPSlect(gdata,optCSP, preOrder,isMember);
+			CSPSelect(gdata,optCSP, preOrder,isMember);
 			break;
 		case 5:
 			SSPAppCancel(preOrder);

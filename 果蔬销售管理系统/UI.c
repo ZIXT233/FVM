@@ -1034,8 +1034,8 @@ int inputProductFilter(Product* prod) {
 int inputRecordFilter(Record* rec) {
 	memset(rec, 0, sizeof(Record));
 	rec->time = rec->lastTime = TIME_NAN;
-	drawOrdMenu("记录类型:", 5, 0, "不限", "进货", "销售记录", "更新记录", "赠予记录");
-	breakDeliver(getUIntInput("记录类型(默认不限) : ", &rec->type, (IntRange) { 0, 4 }, false));
+	drawOrdMenu("记录类型:", 5, 0, "不限", "进货", "销售记录", "更新记录", "赠予记录","销毁记录");
+	breakDeliver(getUIntInput("记录类型(默认不限) : ", &rec->type, (IntRange) { 0, 5 }, false));
 	breakDeliver(inputProductFilter(&rec->prod));
 	breakDeliver(getDateTime("筛选的最早日期(年.月.日)(默认不限) : ", &rec->time, false));
 	breakDeliver(getDateTime("筛选的最晚日期(年.月.日)(默认不限) : ", &rec->lastTime, false));

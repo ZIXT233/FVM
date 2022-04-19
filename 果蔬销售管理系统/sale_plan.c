@@ -117,11 +117,14 @@ CSP* CSPCopyCreate(CSP* src) {
 	}
 	return cp;
 }
-CSP* CSPOptionalListGen(CSP* head, Record* preOrder) {
+CSP* CSPOptionalListGen(CSP* head, Record* preOrder,bool isMember,time_t fvmtime) {
 	CSP* optCSP = CSPListInit(CSPCreate()), * cp = NULL;
 	Inventory* giftcp = NULL;
 	int invCnt;
 	listForEachEntry(CSP, cspPos, &head->list, list) {
+		if (cspPos->reqDateStart != TIME_NAN && cspPos->reqDateStart > fvmtime) continue;
+		if (cspPos->reqDateEnd != TIME_NAN && cspPos->reqDateEnd < fvmtime) continue;
+		if (cspPos->reqMember && !isMember) continue;
 		invCnt = 0;
 		listForEachEntry(Record, recPos, &preOrder->timeList, timeList) {
 			if (recPos->CSPID == 0 && CSPHasInvID(cspPos, recPos->invID)) {

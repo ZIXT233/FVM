@@ -196,8 +196,8 @@ void randomPurchase(FVMO *gdata) {
 	recordIDAllocate(rec, gdata->record);
 	rec->addInfo[0] = '\0';
 	rec->prod.unitPrice = rec->prod.purUPrice; //进货记录中的单价等价于进货单价
-	if (inv->prod.pack == UNIT) rec->prod.amount = inv->prod.quantity * inv->prod.purUPrice;
-	else if (inv->prod.pack == BULK) rec->prod.amount = inv->prod.weight * inv->prod.purUPrice;
+	if (inv->prod.pack == UNIT) rec->prod.amount = centRound(inv->prod.quantity * inv->prod.purUPrice);
+	else if (inv->prod.pack == BULK) rec->prod.amount = centRound(inv->prod.weight * inv->prod.purUPrice);
 	financeExpend(gdata->finance, rec->prod.amount);
 	listAddTail(&rec->timeList, &gdata->record->timeList);
 	listAddTail(&rec->IRList, &inv->invRecord->IRList);;
