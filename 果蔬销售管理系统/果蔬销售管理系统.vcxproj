@@ -82,6 +82,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>.\果蔬销售管理系统\果蔬销售管理系统\include</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -117,6 +118,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>.\include\objects;.\include\utils;.\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -133,6 +135,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <AdditionalIncludeDirectories>.\include\objects;.\include\utils;.\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -142,43 +145,45 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="data_storage.c" />
-    <ClCompile Include="finance.c" />
-    <ClCompile Include="homepage.c" />
-    <ClCompile Include="inventory.c" />
-    <ClCompile Include="inv_manage.c" />
-    <ClCompile Include="list.c" />
-    <ClCompile Include="main.c" />
-    <ClCompile Include="record.c" />
-    <ClCompile Include="renderer.c" />
-    <ClCompile Include="sale.c" />
-    <ClCompile Include="sale_plan.c" />
-    <ClCompile Include="sale_plan_manage.c" />
-    <ClCompile Include="sha256.c" />
-    <ClCompile Include="statistic.c" />
-    <ClCompile Include="system_manage.c" />
-    <ClCompile Include="timer.c" />
-    <ClCompile Include="UI.c" />
+    <ClCompile Include="src\utils\data_storage.c" />
+    <ClCompile Include="src\objects\finance.c" />
+    <ClCompile Include="src\homepage.c" />
+    <ClCompile Include="src\objects\inventory.c" />
+    <ClCompile Include="src\inv_manage.c" />
+    <ClCompile Include="src\objects\list.c" />
+    <ClCompile Include="src\main.c" />
+    <ClCompile Include="src\objects\record.c" />
+    <ClCompile Include="src\objects\renderer.c" />
+    <ClCompile Include="src\sale.c" />
+    <ClCompile Include="src\objects\sale_plan.c" />
+    <ClCompile Include="src\sale_plan_manage.c" />
+    <ClCompile Include="src\utils\sha256.c" />
+    <ClCompile Include="src\statistic.c">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\include\utils;.\include\objects;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="src\system_manage.c" />
+    <ClCompile Include="src\timer.c" />
+    <ClCompile Include="src\UI.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="data_storage.h" />
-    <ClInclude Include="finance.h" />
-    <ClInclude Include="homepage.h" />
-    <ClInclude Include="inventory.h" />
-    <ClInclude Include="inv_manage.h" />
-    <ClInclude Include="list.h" />
-    <ClInclude Include="fvm_objects.h" />
-    <ClInclude Include="product.h" />
-    <ClInclude Include="record.h" />
-    <ClInclude Include="renderer.h" />
-    <ClInclude Include="sale.h" />
-    <ClInclude Include="sale_plan.h" />
-    <ClInclude Include="sale_plan_manage.h" />
-    <ClInclude Include="sha256.h" />
-    <ClInclude Include="statistics.h" />
-    <ClInclude Include="system_manage.h" />
-    <ClInclude Include="timer.h" />
-    <ClInclude Include="UI.h" />
+    <ClInclude Include="include\utils\data_storage.h" />
+    <ClInclude Include="include\objects\finance.h" />
+    <ClInclude Include="include\homepage.h" />
+    <ClInclude Include="include\objects\inventory.h" />
+    <ClInclude Include="include\inv_manage.h" />
+    <ClInclude Include="include\objects\list.h" />
+    <ClInclude Include="include\objects\fvm_objects.h" />
+    <ClInclude Include="include\objects\product.h" />
+    <ClInclude Include="include\objects\record.h" />
+    <ClInclude Include="include\objects\renderer.h" />
+    <ClInclude Include="include\sale.h" />
+    <ClInclude Include="include\objects\sale_plan.h" />
+    <ClInclude Include="include\sale_plan_manage.h" />
+    <ClInclude Include="include\utils\sha256.h" />
+    <ClInclude Include="include\statistics.h" />
+    <ClInclude Include="include\system_manage.h" />
+    <ClInclude Include="include\objects\timer.h" />
+    <ClInclude Include="include\UI.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram.cd" />
