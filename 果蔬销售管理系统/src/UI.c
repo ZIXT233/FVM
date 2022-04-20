@@ -709,7 +709,11 @@ void inputStart(Renderer* renderer, Coord inputOrigin) {
 	for (int i = 0; i < PanelSize.y; i++) {
 		renderPrintf(renderer, "q");
 	}
+	
 	renderPrintf(renderer, ESC "(B");
+	Coord quitTip = bottom;
+	quitTip.y = PanelSize.y - 30;
+	coordPrintf(renderer, quitTip, " 输入quit以中断输入");
 	renderPrintf(renderer, CSI "%d;%dr", inputOrigin.x + 1, bottom.x - 1);
 	inputOrigin.x++;
 	setCursorPos(renderer, inputOrigin);
