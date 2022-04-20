@@ -537,7 +537,7 @@ void drawInvStatsList(Renderer* renderer, Coord origin, ListHead* entry, int pag
 	CellData cellName[9] = { {drawCellStr,12,0,"种类"} ,{drawCellStr,12,0,"品种"},{drawCellStr,12,0,"商品ID"},
 		{drawCellStr,12,0,"销售量"},{drawCellStr,12,0,"进货量"}, {drawCellStr,12,0,"赠送量"},{drawCellStr,12,0,"销毁量"},
 		{drawCellStr,15,0,"营业额"},{drawCellStr,15,0,"盈利额"} };
-	drawColorBar(renderer, cur, 98, 140, 190, statsRectSize.y);
+	drawColorBar(renderer, cur, 238, 232, 213, statsRectSize.y);
 	drawListItem(renderer, cur, cellName, 9);
 	int quantityTable[6];
 	double weightTable[6];
@@ -568,8 +568,8 @@ void drawInvStatsList(Renderer* renderer, Coord origin, ListHead* entry, int pag
 									{packDrawer,12,0,qwTable[DESTROY],pos->prod.unitName},
 									{drawCellDouble,15,1,&finance.turnover},
 									{drawCellDouble,15,1,&finance.profit} };
-		if (n & 1)drawColorBar(renderer, cur, 160, 210, 118, statsRectSize.y);
-		else drawColorBar(renderer, cur, 118, 160, 210, statsRectSize.y);
+		if (n & 1)drawColorBar(renderer, cur, 238, 232, 213, statsRectSize.y);
+		else resetBackgroundColor(renderer);
 		drawListItem(renderer, cur, cellData, 9);
 		cur.x++;
 		n++;
@@ -593,14 +593,13 @@ void drawInvStatsList(Renderer* renderer, Coord origin, ListHead* entry, int pag
 	CellData financeName[5] = { {drawCellStr,23,0,"启动资金"} ,{drawCellStr,23,0,"现有资金"},{drawCellStr,24,0,"营业额"},
 								{drawCellStr,24,0,"成本"},{drawCellStr,24,0,"盈利额"} };
 	cur = gFinancePos;
-	drawColorBar(renderer, cur, 120, 160, 140, statsRectSize.y);
+	drawColorBar(renderer, cur, 238, 232, 213, statsRectSize.y);
 	coordPrintf(renderer, (Coord) { cur.x, cur.y + 120 / 2 - strlen(gFTitle) / 2 }, "%s", gFTitle); cur.x++;
-	drawColorBar(renderer, cur, 120, 160, 180, statsRectSize.y);
+	resetBackgroundColor(renderer);
 	drawListItem(renderer, cur, financeName, 5); cur.x++;
 	CellData financeData[5] = { {drawCellDouble,23,0,&gdata->finance->startUpCapital},{drawCellDouble,23,0,&gdata->finance->balance},
 								{drawCellDouble,24,0,&gdata->finance->turnover},{drawCellDouble,24,0,&gdata->finance->cost},
 								{drawCellDouble,24,0,&gdata->finance->profit} };
-	drawColorBar(renderer, cur, 120, 80, 140, statsRectSize.y);
 	drawListItem(renderer, cur, financeData, 5);
 }
 void drawGiftList(Renderer* renderer, Coord origin, ListHead* entry, int pageSize, void* exArg) {

@@ -13,7 +13,7 @@ Coord coordAdd(Coord, Coord);
 #define ESC "\033"
 #define CSI "\033["
 #define BACKGROUND_DEFAULT "48;2;253;246;227m"
-#define TEXT_COLOR_DEFAULT "38;2;0;0;0m"
+#define TEXT_COLOR_DEFAULT "38;2;101;123;131m"
 Renderer* rendererCreate(int bufferSize);
 void rendererDelete(Renderer* renderer);
 int renderVPrintf(Renderer* renderer, const char* _Format, va_list aptr);

@@ -44,7 +44,7 @@ int SSPAdd(SSP* head, Inventory* invHead) {
 		breakCatch(inputGift(&gift, invHead)) break;
 		listAddTail(&gift->list, &ssp->optGifts->list);
 	}
-	breakDeliver(getStrInput("输入附加信息:", ssp->addInfo, INFOMAX, true));
+	breakDeliver(getStrInput("输入附加信息:", ssp->addInfo, INFOMAX, false));
 	SSPIDAllocate(ssp, head);
 	listAddTail(&ssp->list, &head->list);
 }
@@ -127,7 +127,7 @@ int CSPAdd(CSP* head, Inventory* invHead) {
 		breakCatch(inputGift(&gift, invHead)) break;
 		listAddTail(&gift->list, &csp->optGifts->list);
 	}
-	breakDeliver(getStrInput("输入附加信息:", csp->addInfo, INFOMAX, true));
+	breakDeliver(getStrInput("输入附加信息:", csp->addInfo, INFOMAX, false));
 	CSPIDAllocate(csp, head);
 	listAddTail(&csp->list, &head->list);
 
