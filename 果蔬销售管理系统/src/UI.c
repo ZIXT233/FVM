@@ -727,10 +727,11 @@ int readline(char* buf, int maxCount, FILE* stream, int* pNumberRead) { //´ÓÁ÷¶Á
 	int i;
 	char t;
 	*pNumberRead = 0;
+	if (demoDelay > 0) Sleep(demoDelay);
 	for (i = 0; (t = fgetc(stream)) != '\n'; i++) {
 		if (i < maxCount - 1) buf[i] = t;
 	}
-	if (demoDelay > 0) Sleep(demoDelay);
+	
 	if (i >= maxCount) {
 		fwrite(buf, 1, maxCount - 1, stdinLog);
 		fputc('\n', stdinLog); fflush(stdinLog);
